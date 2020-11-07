@@ -56,3 +56,37 @@ or,
 ```yaml
 sort: descending
 ```
+
+## Custom Filters
+
+InContext provides a number of additional Jinja2 filters and context functions to make certain tasks easier.
+
+### Now
+
+```
+{{ '{' }}% set d = now() %{{ '}' }}
+{{ '{{' }} d {{ '}}' }}
+```
+
+Return the current date in UTC (with timezone).
+
+### Date
+
+```
+{{ '{' }}% set d = date("1982-12-28") %{{ '}' }}
+{{ '{{' }} d {{ '}}' }}
+```
+
+Initialize a date (with timezone) corresponding with a specific string representation.
+
+### Generate UUID
+
+```
+{{ '{' }}% set uuid = generate_uuid() %{{ '}' }}
+{{ '{{' }} uuid {{ '}}' }}
+```
+
+Return a new UUID.
+
+`generate_uuid` is intended to make it easy to generate unique identifiers when writing inline HTML and JavaScript.
+
