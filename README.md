@@ -13,7 +13,7 @@ Since there are a significant number of external dependencies (e.g., ImageMagick
 1. Install [Docker](https://docs.docker.com/engine/install/ubuntu/) and Docker Compose.
 2. Perform builds using `incontext-docker` instead of directly; this will run builds inside a suitably configured Ubuntu 20.04 Docker container.
 
-## Frontmatter and Templates
+## Frontmatter
 
 InContext has a few special Frontmatter properties.
 
