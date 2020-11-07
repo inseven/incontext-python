@@ -1,0 +1,27 @@
+[[source]]
+
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+
+
+[packages]
+
+Flask = "*"
+Flask-misaka = "*"
+Jinja2 = "*"
+lxml = "*"
+misaka = "*"
+nose = "*"
+Pillow = "*"
+python-dateutil = ">=2.7"
+pyheif = "*"
+python-frontmatter = "*"
+pytz = "*"
+titlecase = "*"
+whatimage = "*"
+watchdog = "*"
+
+
+[requires]
+
+python_version = "3"
