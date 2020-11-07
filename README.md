@@ -57,11 +57,15 @@ or,
 sort: descending
 ```
 
-## Custom Filters
+## Templates
+
+InContext uses [Jinja2](https://jinja.palletsprojects.com/en/2.11.x/) for templating with some additional custom filters. Check out the Jinja2 [Template Designer Documentation](https://jinja.palletsprojects.com/en/2.11.x/templates/) for basic usage.
+
+### Additional Filters
 
 InContext provides a number of additional Jinja2 filters and context functions to make certain tasks easier.
 
-### Now
+#### Now
 
 ```
 {{ '{' }}% set d = now() %{{ '}' }}
@@ -70,7 +74,7 @@ InContext provides a number of additional Jinja2 filters and context functions t
 
 Return the current date in UTC (with timezone).
 
-### Date
+#### Date
 
 ```
 {{ '{' }}% set d = date("1982-12-28") %{{ '}' }}
@@ -79,7 +83,7 @@ Return the current date in UTC (with timezone).
 
 Initialize a date (with timezone) corresponding with a specific string representation.
 
-### Generate UUID
+#### Generate UUID
 
 ```
 {{ '{' }}% set uuid = generate_uuid() %{{ '}' }}
