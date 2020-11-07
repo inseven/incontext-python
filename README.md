@@ -2,6 +2,10 @@
 
 An extensible multimedia static site generator
 
+## Background
+
+Most existing static site generators do a great job with text content, but treat media as an afterthought. InContext handles Markdown just as well as generators like [Jekyll](https://jekyll.rb), and adds native support for photos and video. Adding support for additional media types is simply a matter of adding a new handler.
+
 ## Requirements
 
 Since there are a significant number of external dependencies (e.g., ImageMagick, FFMPEG, etc), Docker is the recommended mechanism for running builds.
