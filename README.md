@@ -68,8 +68,8 @@ InContext provides a number of additional Jinja2 filters and context functions t
 #### Now
 
 ```
-{{ '{' }}% set d = now() %{{ '}' }}
-{{ '{{' }} d {{ '}}' }}
+{% set d = now() %}
+{{ d }}
 ```
 
 Return the current date in UTC (with timezone).
@@ -86,8 +86,8 @@ Initialize a date (with timezone) corresponding with a specific string represent
 #### Generate UUID
 
 ```
-{{ '{' }}% set uuid = generate_uuid() %{{ '}' }}
-{{ '{{' }} uuid {{ '}}' }}
+{% set uuid = generate_uuid() %}
+{{ uuid }}
 ```
 
 Return a new UUID.
