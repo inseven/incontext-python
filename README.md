@@ -77,8 +77,8 @@ Return the current date in UTC (with timezone).
 #### Date
 
 ```
-{{ '{' }}% set d = date("1982-12-28") %{{ '}' }}
-{{ '{{' }} d {{ '}}' }}
+{% set d = date("1982-12-28") %}
+{{ d }}
 ```
 
 Initialize a date (with timezone) corresponding with a specific string representation.
