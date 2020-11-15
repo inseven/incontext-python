@@ -32,6 +32,19 @@ def get_directory_sha(path):
         with open(os.path.join(path, f), 'rb') as fh:
             hash.update(fh.read())
     return hash.hexdigest()
+    
+    
+def unique_prefixes(paths):
+    previous = None
+    for path in sorted(paths):
+        if previous is not None and path.startswith(previous):
+            continue
+        previous = path
+        yield previous
+        
+        
+def filter_paths(items):
+    return [os.path.abspath(item) for item in items if os.path.exists(item)]
 
 
 def main():
@@ -58,18 +71,12 @@ def main():
     # These will be mounted as volumes when running Docker Compose to ensure the instance of incontext running
     # in the container has access to the necessary files.
     # Passing a path on the command line is treated as granting implicit permission to the container.
-    
-    # The current working directory is an implicit mount.
     cwd = os.getcwd()
-    volumes = ["--volume", f"{cwd}:{cwd}"]
-    
-    # Generate volumes for all path arguments.
-    for arg in args:
-        if not os.path.exists(arg):
-            continue
-        volume = os.path.abspath(arg)
+    volumes = []
+    for volume in unique_prefixes(filter_paths(args) + [cwd]):  # N.B. The current working directory is an implicit mount.
         volumes.extend(["--volume", f"{volume}:{volume}"])
     
+    # Construct the command.    
     command = (["docker", "run",
                 "--user", f"{os.getuid()}:{os.getgid()}",
                 "--workdir", cwd,
@@ -77,6 +84,8 @@ def main():
                volumes +
                [image_tag, "python3", "/usr/local/src/incontext/incontext.py"] +
                args)
+               
+    # Run incontext in docker.
     logging.debug("Running command %s.", command)
     subprocess.run(command)
 
