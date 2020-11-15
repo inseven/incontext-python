@@ -6,7 +6,7 @@ An extensible multimedia static site generator
 
 Most existing static site generators do a great job with text content, but treat media as an afterthought. InContext handles Markdown just as well as generators like [Jekyll](https://jekyll.rb), and adds native support for photos and video. Adding support for additional media types is simply a matter of adding a new handler.
 
-## Getting Started
+## Installation
 
 1. [Install Docker](https://docs.docker.com/engine/install/)
 2. Clone the repository:
@@ -17,6 +17,12 @@ Most existing static site generators do a great job with text content, but treat
    ```bash
    export PATH=$PATH:/path/to/incontext
    ```
+
+## Getting Started
+
+```bash
+incontext build
+```
 
 ## Frontmatter
 
