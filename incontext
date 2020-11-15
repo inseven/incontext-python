@@ -1,47 +1,81 @@
 #!/usr/bin/env python3
 
+import hashlib
 import logging
 import os
 import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-DOCKER_FILE = os.path.join(ROOT, "docker/Dockerfile")
+DOCKER_DIRECTORY = os.path.join(ROOT, "docker")
+
+DOCKERFILE = os.path.join(DOCKER_DIRECTORY, "Dockerfile")
+
+DOCKER_IMAGE_NAME = "incontext-docker"
 
 
 verbose = '--verbose' in sys.argv[1:] or '-v' in sys.argv[1:]
 logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO, format="[%(levelname)s] %(message)s")
 
 
+def get_files(path):
+    result = []
+    for root, dirs, files in os.walk(path):
+        result.extend(files)
+    return result
+    
+
+def get_directory_sha(path):
+    hash = hashlib.sha256()
+    for f in sorted(get_files(path)):
+        hash.update(f.encode("utf-8"))
+        with open(os.path.join(path, f), 'rb') as fh:
+            hash.update(fh.read())
+    return hash.hexdigest()
+
+
 def main():
     args = sys.argv[1:]
 
     # TODO: Wait for docker to start up to handle situations where we've been launched before docker is running (e.g. system startup).
-
-    # Check to see if we've been asked to build the docker image.
-    # TODO: Auto-detect if the dependencies have changed and rebuild the docker image for us.
-    if args == ["compile"]:
+    
+    # Check to see if we already have a suitable docker image; build one if not.
+    # This generates a SHA for the docker directory and uses this as a tag to identify the required docker image.
+    directory_sha = get_directory_sha(DOCKER_DIRECTORY)
+    image_tag = f"{DOCKER_IMAGE_NAME}:{directory_sha}"
+    images = subprocess.check_output(["docker", "images", "-q", image_tag]).decode("utf-8").strip().split("\n")
+    images = [image for image in images if image]
+    if not images:
+        logging.info("Building docker container...")
+        quiet = [] if verbose else ["--quiet"]
         subprocess.check_call(["docker", "build",
-                               "-t", "incontext-docker",
-                               "-f", DOCKER_FILE,
-                               ROOT])
-        exit()
+                               "-t", image_tag,
+                               "-f", DOCKERFILE] +
+                              quiet +
+                              [ROOT])
 
     # Iterate over the arguments determining which ones map to files or directories on the file system.
     # These will be mounted as volumes when running Docker Compose to ensure the instance of incontext running
     # in the container has access to the necessary files.
-    # Passing a path on the command line is treated as granting implicit access to the container.
-    volumes = []
+    # Passing a path on the command line is treated as granting implicit permission to the container.
+    
+    # The current working directory is an implicit mount.
+    cwd = os.getcwd()
+    volumes = ["--volume", f"{cwd}:{cwd}"]
+    
+    # Generate volumes for all path arguments.
     for arg in args:
         if not os.path.exists(arg):
             continue
         volume = os.path.abspath(arg)
         volumes.extend(["--volume", f"{volume}:{volume}"])
+    
     command = (["docker", "run",
                 "--user", f"{os.getuid()}:{os.getgid()}",
+                "--workdir", cwd,
                 "--volume", f"{ROOT}:/usr/local/src/incontext"] +
                volumes +
-               ["incontext-docker", "python3", "/usr/local/src/incontext/incontext.py"] +
+               [image_tag, "python3", "/usr/local/src/incontext/incontext.py"] +
                args)
     logging.debug("Running command %s.", command)
     subprocess.run(command)
