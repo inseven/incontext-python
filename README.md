@@ -107,6 +107,6 @@ Return a new UUID.
 
 ## History
 
-InContext is named after a Perl static site generator I wrote in 2005 and [failed to publish](https://jbmorley.co.uk/posts/2005-06-24-incontext/) (it required the site structure to be defined in code and was not easy to use). Back then, every piece of software I wrote was named with the In- prefix (e.g., [InJapan](https://github.com/jbmorley/injapan)) in keeping with my [in7.co.uk](https://in7.co.uk) domain name. Hopefully this is more widely useful than my first attempt.
+InContext is named after a Perl static site generator I wrote in 2005 and [failed to publish](https://jbmorley.co.uk/posts/2005-06-24-incontext/) (it required the site structure to be defined in code and was not easy to use). Back then, every piece of software I wrote was named with the 'In' prefix in keeping with my [in7.co.uk](https://in7.co.uk) domain name (c.f., [InJapan](https://github.com/jbmorley/injapan)). Hopefully this is more widely useful than my first attempt.
 
 [InSeven Limited](https://inseven.co.uk) is still the name of my company.
