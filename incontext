@@ -5,6 +5,7 @@ import logging
 import os
 import subprocess
 import sys
+import time
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 DOCKER_DIRECTORY = os.path.join(ROOT, "docker")
@@ -50,7 +51,17 @@ def filter_paths(items):
 def main():
     args = sys.argv[1:]
 
-    # TODO: Wait for docker to start up to handle situations where we've been launched before docker is running (e.g. system startup).
+    # Wait for docker to start up to handle situations where we've been launched before docker is running (e.g. system startup).
+    waiting = False
+    while True:
+        try:
+            subprocess.check_output(["docker", "stats", "--no-stream"], stderr=subprocess.STDOUT)
+            break
+        except subprocess.CalledProcessError:
+            if not waiting:
+                waiting = True
+                logging.info("Waiting for docker...")
+            time.sleep(2)
     
     # Check to see if we already have a suitable docker image; build one if not.
     # This generates a SHA for the docker directory and uses this as a tag to identify the required docker image.
