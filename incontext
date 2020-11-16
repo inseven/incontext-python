@@ -98,7 +98,8 @@ def main():
                
     # Run incontext in docker.
     logging.debug("Running command %s.", command)
-    subprocess.run(command)
+    result = subprocess.run(command)
+    sys.exit(result.returncode)
 
 
 if __name__ == "__main__":
