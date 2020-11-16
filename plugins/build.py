@@ -71,9 +71,16 @@ class SiteConfiguration(object):
     def __init__(self, path, overrides={}):
         self._path = os.path.abspath(path)
         self._root = os.path.dirname(self._path)
+        self._overrides = overrides
+        self._loaded = False
+            
+    def _load_configuration(self):
+        if self._loaded:
+            return
+        self._loaded = True
         with open(self._path) as fh:
             self._config = yaml.load(fh, Loader=yaml.SafeLoader)
-        for key, value in overrides.items():
+        for key, value in self._overrides.items():
             logging.info("%s=%s" % (key, value))
             keys = key.split(".")
             destination = self._config
@@ -87,14 +94,17 @@ class SiteConfiguration(object):
 
     @property
     def build_steps(self):
+        self._load_configuration()
         return self._config["build_steps"]
 
     @property
     def config(self):
+        self._load_configuration()
         return self._config["config"]
 
     @property
     def paths(self):
+        self._load_configuration()
         paths = {
             "content": "content",
             "build": "build",
@@ -107,6 +117,7 @@ class SiteConfiguration(object):
 
     @property
     def destination(self):
+        self._load_configuration()
         return PropertyDictionary({
             "root_directory": self.paths.build,
             "files_directory": os.path.join(self.paths.build, "files"),
