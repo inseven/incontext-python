@@ -21,9 +21,9 @@ jobs:
       run: |
         python3 -u incontext tests
     - name: Build documentation
-    run: |
-      python3 -u incontext build-documentation
+      run: |
+        python3 -u incontext build-documentation
     - uses: actions/upload-artifact@v2
-    with:
-      name: documentation
-      path: documentation/*
+      with:
+        name: documentation
+        path: documentation/*
