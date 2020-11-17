@@ -20,6 +20,10 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.8
-    - name: Run tests
+    - name: incontext build-documentation
       run: |
         python3 -u incontext build-documentation
+    - uses: actions/upload-artifact@v2
+      with:
+        name: documentation
+        path: documentation/*
