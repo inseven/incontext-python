@@ -1,5 +1,7 @@
 # InContext
 
+![Build](https://github.com/jbmorley/incontext/workflows/Build/badge.svg)
+
 An extensible multimedia static site generator
 
 ## Background
