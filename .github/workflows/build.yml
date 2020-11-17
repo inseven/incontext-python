@@ -12,7 +12,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout source
+      uses: actions/checkout@v2
     - name: Set up Python 3.8
       uses: actions/setup-python@v2
       with:
@@ -23,7 +24,8 @@ jobs:
     - name: Build documentation
       run: |
         python3 -u incontext build-documentation
-    - uses: actions/upload-artifact@v2
+    - name: Upload documentation
+      uses: actions/upload-artifact@v2
       with:
         name: documentation
         path: documentation/*
