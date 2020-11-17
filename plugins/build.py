@@ -228,8 +228,7 @@ class Website(object):
             _, extension = os.path.splitext(document.template)
             destination_directory = os.path.join(self.files_directory, document.url[1:])
             destination = os.path.join(destination_directory, "index" + extension)
-            if not os.path.exists(destination_directory):
-                os.makedirs(destination_directory)
+            utils.makedirs(destination_directory)
             with open(destination, "wb") as fh:
                 fh.write(response.data)
             return destination, query_tracker.queries, hashes
@@ -240,8 +239,7 @@ def command_build(incontext, parser):
     def do_build(options):
 
         # Create the build directory.
-        if not os.path.exists(incontext.configuration.site.destination.root_directory):
-            os.makedirs(incontext.configuration.site.destination.root_directory)
+        utils.makedirs(incontext.configuration.site.destination.root_directory)
 
         # Run the build tasks.
         for task in incontext.configuration.site.build_steps:
@@ -288,8 +286,7 @@ def import_markdown(incontext, from_directory, to_directory, default_category='g
                 # Ensure the destination directory exists.
                 # This is designed to fail if the destination path exists, but is not a directory.
                 target_directory = os.path.join(to_directory, dirname)
-                if not os.path.isdir(target_directory):
-                    os.makedirs(target_directory)
+                utils.makedirs(target_directory)
 
                 document.metadata['thumbnail'] = gallery.resize(thumbnail_src,
                                                                 to_directory,
