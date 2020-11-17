@@ -22,4 +22,4 @@ jobs:
         python-version: 3.8
     - name: Run tests
       run: |
-        python3 incontext tests
+        python3 -u incontext tests
