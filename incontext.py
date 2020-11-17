@@ -81,6 +81,7 @@ class InContext(object):
         self.parser = argparse.ArgumentParser(prog="incontext", description="Generate website.")
         self.parser.add_argument('--site', '-s', default=os.getcwd(), help="path to the root of the site")
         self.parser.add_argument('--verbose', '-v', action='store_true', default=False, help="show verbose output")
+        self.parser.add_argument('--volume', nargs="*", help="mount an additional volume in the Docker container")
         self.subparsers = self.parser.add_subparsers(help="command to run")
 
         # Initialize the plugins.
