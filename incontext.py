@@ -98,7 +98,7 @@ class InContext(object):
         """
         Register a new command line command.
 
-        The callable, function, will be called with the argparse.ArgumentParser sub-parser instance for that command as
+        The callable, function, will be called with the `argparse.ArgumentParser` sub-parser instance for that command as
         the first argument to allow the command to register any command-line arguments it requires. The command function
         must return a new callable which will be called if the the command is selected from the command line.
 

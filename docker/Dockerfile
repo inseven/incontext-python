@@ -28,7 +28,7 @@ RUN make
 RUN make install
 
 # Install the Python dependencies.
-WORKDIR ${INCONTEXT_DIR}
-COPY Pipfile ${INCONTEXT_DIR}/
+WORKDIR ${INCONTEXT_DIR}/docker
+# COPY Pipfile ${INCONTEXT_DIR}/
 RUN python3 -m pip install pipenv
 RUN pipenv install --verbose --system --skip-lock
