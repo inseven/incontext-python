@@ -28,6 +28,9 @@ import tempfile
 
 
 class Chdir(object):
+    """
+    Context handler for changing directory.
+    """
 
     def __init__(self, path):
         self.path = path
@@ -55,6 +58,12 @@ class TempDir(object):
 
 
 class FrontmatterDocument(object):
+    """
+    Convenience class for working with Front Matter and Markdown.
+    
+    The frontmatter module expects a named tuple with `content` and `metadata` properties when serialising Front Matter and Markdown. This class provides
+    a lightweight solution.
+    """
 
     def __init__(self, content="", metadata=None):
         self.content = content
@@ -96,6 +105,13 @@ def find_files(path, types=None):
 
 
 def makedirs(path):
+    """
+    Ensure a directory exists at `path`, recursively creating all intermediate directories if necessary.
+    
+    Unlike `os.makedirs`, this does not raise an exception if the directory already exists.
+    
+    N.B. This will not raise an exception if the path exists, but is not a directory.
+    """
     if not os.path.isdir(path):
         os.makedirs(path)
 

@@ -1,0 +1,6 @@
+*~
+*.pyc
+.DS_Store
+.sass-cache
+Pipfile.lock
+__pycache__

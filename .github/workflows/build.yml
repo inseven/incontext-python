@@ -1,0 +1,31 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@v2
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Run tests
+      run: |
+        python3 -u incontext tests
+    - name: Build documentation
+      run: |
+        python3 -u incontext build-documentation
+    - name: Upload documentation
+      uses: actions/upload-artifact@v2
+      with:
+        name: documentation
+        path: documentation/*
