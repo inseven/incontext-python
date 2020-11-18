@@ -29,15 +29,7 @@ jobs:
       run: |
         python3 -u incontext build-documentation
         
-    - name: Upload documentation
-      uses: actions/upload-artifact@v2
-      with:
-        name: docs
-        path: docs/*
-        
     - name: Commit documentation
       uses: stefanzweifel/git-auto-commit-action@v4
       with:
-        branch: documentation
-        push_options: '--force'
         commit_message: Update auto-generated documentation
