@@ -120,6 +120,9 @@ class InContext(object):
         self.commands[name] = command_runner
 
     def add_configuration_provider(self, name, function):
+        """
+        Add a named configuration provider.
+        """
         self.configuration_providers[name] = function
 
     def add_task(self, name, function):
