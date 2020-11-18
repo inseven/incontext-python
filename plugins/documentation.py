@@ -23,8 +23,27 @@ import subprocess
 import glob
 import os
 
+import jinja2
+
 import paths
 import utils
+
+INDEX_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+    <head>
+    </head>
+    <body>
+        <h1>InContext<h1>
+        <h2>Plugin Interface</h2>
+        <ul>
+        {% for module in modules %}
+            <li><a href="{{ module }}.html">{{ module }}</a></li>
+        {% endfor %}
+        </ul>
+    </body>
+</html>
+"""
 
 
 def initialize_plugin(generate):
@@ -34,12 +53,24 @@ def initialize_plugin(generate):
 def command_build_documentation(generate, parser):
 
     def do_tests(options):
+        documentation_directory = os.path.join(paths.SCRIPTS_DIR, "documentation")
+        
         with utils.Chdir(paths.SCRIPTS_DIR):
             
+            # Look up the python files to document.
+            files = glob.glob("*.py")
+            modules = [os.path.splitext(f)[0] for f in files]
+            
+            # Generate the Python documentation.
             subprocess.check_call(["pdoc", 
                                    "--html",
-                                   "--output-dir", os.path.join(paths.SCRIPTS_DIR, "documentation"),
+                                   "--output-dir", documentation_directory,
                                    "--force"] +
-                                  glob.glob("*.py"))
+                                  files)
+                                  
+            # Create an index page.
+            with open(os.path.join(documentation_directory, "index.html"), "w") as fh:
+                template = jinja2.Template(INDEX_TEMPLATE)
+                fh.write(template.render(modules=modules))
 
     return do_tests
