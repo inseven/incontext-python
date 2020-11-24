@@ -132,7 +132,7 @@ class InContext(object):
 
     def get_task(self, name):
         """
-        Returns the task associated with `name`.
+        Return the task associated with `name`.
         
         Raises `KeyError` if no task has been registered with `name`.
         """
