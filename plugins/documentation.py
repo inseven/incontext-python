@@ -51,9 +51,10 @@ def initialize_plugin(generate):
 
 
 def command_build_documentation(generate, parser):
+    parser.add_argument("output", help="output directory")
 
     def do_tests(options):
-        documentation_directory = os.path.join(paths.SCRIPTS_DIR, "docs")
+        documentation_directory = os.path.abspath(options.output)
         
         with utils.Chdir(paths.SCRIPTS_DIR):
             

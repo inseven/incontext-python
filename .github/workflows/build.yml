@@ -27,7 +27,7 @@ jobs:
         
     - name: Build documentation
       run: |
-        python3 -u incontext build-documentation
+        python3 -u incontext build-documentation docs
         
     - name: Commit documentation
       uses: stefanzweifel/git-auto-commit-action@v4
@@ -44,3 +44,8 @@ jobs:
       uses: actions/checkout@v2
       with:
         path: incontext
+        
+    - name: Build documentation
+      run: |
+        mkdir docs
+        python3 -u incontext/incontext build-documentation docs
