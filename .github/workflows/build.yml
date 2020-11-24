@@ -60,5 +60,4 @@ jobs:
       uses: stefanzweifel/git-auto-commit-action@v4
       with:
         commit_message: Update auto-generated documentation
-      env:
-        INPUT_REPOSITORY: site
+        repository: site
