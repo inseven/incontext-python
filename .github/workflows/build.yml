@@ -45,6 +45,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: jbmorley/incontext-site
+        ref: main
         path: site
         ssh-key: ${{ secrets.SSH_KEY }}
         
@@ -57,3 +58,4 @@ jobs:
       with:
         commit_message: Update auto-generated documentation
         repository: site
+        branch: main
