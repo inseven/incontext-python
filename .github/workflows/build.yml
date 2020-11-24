@@ -33,3 +33,14 @@ jobs:
       uses: stefanzweifel/git-auto-commit-action@v4
       with:
         commit_message: Update auto-generated documentation
+
+    documentation:
+      
+    runs-on: Ubuntu-20.04
+    
+    steps:
+      
+    - name: Checkout source
+      uses: actions/checkout@v2
+      with:
+        path: incontext
