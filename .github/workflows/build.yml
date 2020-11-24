@@ -56,3 +56,9 @@ jobs:
     - name: Build documentation
       run: |
         python3 -u incontext/incontext build-documentation site
+
+    - name: Commit documentation
+      uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: Update auto-generated documentation
+      working-directory: site
