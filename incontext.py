@@ -131,6 +131,11 @@ class InContext(object):
         self.tasks[name] = function
 
     def get_task(self, name):
+        """
+        Returns the task named `name`.
+        
+        Raises `KeyError` otherwise.
+        """
         return self.tasks[name]
 
     def add_handler(self, name, function):
