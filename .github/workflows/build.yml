@@ -50,7 +50,13 @@ jobs:
       with:
         path: incontext
         
+    - name: Checkout site repository
+      uses: actions/checkout@v2
+      with:
+        repository: jbmorley/incontext-site
+        path: site
+        ssh-key: ${{ secrets.SSH_KEY }}
+        
     - name: Build documentation
       run: |
-        mkdir docs
-        python3 -u incontext/incontext build-documentation docs
+        python3 -u incontext/incontext build-documentation site
