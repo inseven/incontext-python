@@ -34,7 +34,7 @@ jobs:
       with:
         commit_message: Update auto-generated documentation
 
-    documentation:
+  documentation:
       
     runs-on: Ubuntu-20.04
     
