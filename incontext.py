@@ -93,6 +93,12 @@ class InContext(object):
                 logging.debug("Ignoring '%s'...", plugin_name)
 
     def add_argument(self, *args, **kwargs):
+        """
+        Add a global command-line argument.
+        
+        Primarily intended to be used by configuration providers to allow them to specify a path to a configuration
+        file, or configuration override.
+        """
         self.parser.add_argument(*args, **kwargs)
 
     def add_command(self, name, function, help=""):
