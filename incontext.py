@@ -93,6 +93,12 @@ class InContext(object):
                 logging.debug("Ignoring '%s'...", plugin_name)
 
     def add_argument(self, *args, **kwargs):
+        """
+        Add a global command-line argument.
+        
+        Primarily intended to be used by configuration providers to allow them to specify a path to a configuration
+        file, or configuration override.
+        """
         self.parser.add_argument(*args, **kwargs)
 
     def add_command(self, name, function, help=""):
@@ -131,6 +137,11 @@ class InContext(object):
         self.tasks[name] = function
 
     def get_task(self, name):
+        """
+        Return the task associated with `name`.
+        
+        Raises `KeyError` if no task has been registered with `name`.
+        """
         return self.tasks[name]
 
     def add_handler(self, name, function):
@@ -172,6 +183,9 @@ class InContext(object):
 
 
 def main():
+    """
+    Entry-point for the InContext cli. Should not be called directly.
+    """
     instance = InContext(plugins_directory=PLUGINS_DIRECTORY)
     instance.run()
 
