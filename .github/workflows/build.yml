@@ -31,6 +31,11 @@ jobs:
     
     steps:
       
+    - name: Turnstyle
+      uses: softprops/turnstyle@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.TOKEN }}
+      
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
@@ -47,7 +52,7 @@ jobs:
         repository: jbmorley/incontext-site
         ref: main
         path: site
-        ssh-key: ${{ secrets.SSH_KEY }}
+        token: ${{ secrets.TOKEN }}
         
     - name: Build documentation
       run: |
