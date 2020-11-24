@@ -31,7 +31,7 @@ jobs:
     
     steps:
       
-    - name: Turnstyle
+    - name: Wait for other builds to finish
       uses: softprops/turnstyle@v1
       env:
         GITHUB_TOKEN: ${{ secrets.TOKEN }}
