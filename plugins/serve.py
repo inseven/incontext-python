@@ -63,9 +63,9 @@ def watch_directory(paths, callback):
     return observer
 
 
-def initialize_plugin(generate):
-    generate.add_command("watch", command_watch, help="watch for changes and automatically build the website")
-    generate.add_command("serve", command_serve, help="serve a local copy of the site using a Docker nginx container")
+def initialize_plugin(incontext):
+    incontext.add_command("watch", command_watch, help="watch for changes and automatically build the website")
+    incontext.add_command("serve", command_serve, help="serve a local copy of the site using a Docker nginx container")
 
 
 class Builder(threading.Thread):
@@ -132,7 +132,7 @@ def docker(command):
     return subprocess.run(prefix + ["docker"] + command)
 
 
-def command_serve(generate, parser):
+def command_serve(incontext, parser):
     def do_serve(options):
         container = "incontext-nginx"
         docker(["rm", "--force", container])
@@ -140,7 +140,7 @@ def command_serve(generate, parser):
                 "--restart", "always",
                 "-d",
                 "-p", "80:80",
-                "-v", f"{generate.configuration.site.destination.files_directory}:/usr/share/nginx/html",
+                "-v", f"{incontext.configuration.site.destination.files_directory}:/usr/share/nginx/html",
                 "-v", f"{os.path.join(paths.ROOT_DIR, 'nginx.conf')}:/etc/nginx/conf.d/default.conf",
                 "nginx"])
     return do_serve

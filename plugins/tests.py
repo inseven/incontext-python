@@ -23,11 +23,11 @@ import subprocess
 import paths
 
 
-def initialize_plugin(generate):
-    generate.add_command("tests", command_tests, help="Test the utilities.")
+def initialize_plugin(incontext):
+    incontext.add_command("tests", command_tests, help="Test the utilities.")
 
 
-def command_tests(generate, parser):
+def command_tests(incontext, parser):
 
     def do_tests(options):
     	subprocess.check_call(["nosetests", "-v", paths.TESTS_DIR])

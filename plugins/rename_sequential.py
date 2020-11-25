@@ -27,11 +27,11 @@ import utils
 from paths import *
 
 
-def initialize_plugin(generate):
-    generate.add_task("rename_sequential", rename_sequential)
+def initialize_plugin(incontext):
+    incontext.add_task("rename_sequential", rename_sequential)
 
 
-def rename_sequential(generate, options, when):
+def rename_sequential(incontext, options, when):
 
     directories = {}
     for root, dirname, basename in utils.find_files(CONTENT_DIR):
