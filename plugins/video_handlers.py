@@ -30,11 +30,11 @@ import utils
 LOG_LEVEL_PANIC = "panic"
 
 
-def initialize_plugin(generate):
-    generate.add_handler("import_video", import_video)
+def initialize_plugin(incontext):
+    incontext.add_handler("import_video", import_video)
 
 
-def import_video(generate, from_directory, to_directory, category, title_from_filename=True):
+def import_video(incontext, from_directory, to_directory, category, title_from_filename=True):
 
     @functools.wraps(import_video)
     def inner(path):
@@ -102,7 +102,7 @@ def import_video(generate, from_directory, to_directory, category, title_from_fi
         data["path"] = converters.ensure_leading_slash(path)
 
         document = store.Document(data["url"], data, os.path.getmtime(path))
-        generate.environment["DOCUMENT_STORE"].add(document)
+        incontext.environment["DOCUMENT_STORE"].add(document)
 
         return {'files': [mp4_path, thumbnail_path],
                 'urls': [document.url]}

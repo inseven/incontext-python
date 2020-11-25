@@ -46,16 +46,16 @@ import store
 import utils
 
 
-def initialize_plugin(generate):
-    generate.add_handler("import_photo", import_photo)
+def initialize_plugin(incontext):
+    incontext.add_handler("import_photo", import_photo)
 
 
-def import_photo(generate, from_directory, to_directory, category, title_from_filename=True):
+def import_photo(incontext, from_directory, to_directory, category, title_from_filename=True):
 
     @functools.wraps(import_photo)
     def inner(path):
         root, dirname, basename = utils.tripple(from_directory, path)
-        return process_image(generate, from_directory, to_directory, dirname, basename, category=category, title_from_filename=title_from_filename)
+        return process_image(incontext, from_directory, to_directory, dirname, basename, category=category, title_from_filename=title_from_filename)
 
     return inner
 
@@ -335,7 +335,7 @@ def first_value_or_none(dictionary, keys):
     return None
 
 
-def process_image(generate, root, destination, dirname, basename, category, title_from_filename=True):
+def process_image(incontext, root, destination, dirname, basename, category, title_from_filename=True):
     source_path = os.path.join(root, dirname, basename)
     identifier = generate_identifier(basename)
     destination_dir = os.path.join(destination, dirname)
@@ -430,7 +430,7 @@ def process_image(generate, root, destination, dirname, basename, category, titl
     metadata["path"] = converters.ensure_leading_slash(os.path.join(dirname, basename))
 
     metadata_document = store.Document(metadata['url'], metadata, os.path.getmtime(source_path))
-    generate.environment["DOCUMENT_STORE"].add(metadata_document)
+    incontext.environment["DOCUMENT_STORE"].add(metadata_document)
 
     files = [markdown_path] + [os.path.join(destination, dirname, metadata[f]["filename"]) for f in profiles.keys()]
     files = [os.path.join(destination, dirname, metadata[f]["filename"]) for f in profiles.keys()]
