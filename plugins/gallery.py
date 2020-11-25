@@ -205,6 +205,12 @@ def imagemagick_resize(source, destination, size):
 
 
 def gifsicle_resize(source, destination, size):
+    """
+    Resize a gif using the `gifsicle` command line utility (see [](https://www.lcdf.org/gifsicle/)).
+    
+    Resizing using animated gifs using ImageMagick will often produce very large output files and, in the case of
+    incrementally encoded images, result in completely broken output.
+    """
     command = ['gifsicle',
                '--resize', size,
                '--colors', '256',
