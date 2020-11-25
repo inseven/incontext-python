@@ -150,34 +150,34 @@ def configuration_provider_site(incontext, options):
     return SiteConfiguration(os.path.join(os.path.abspath(options.site), "site.yaml"), overrides)
 
 
-def process_files(generate, options, handlers):
-    document_store = store.DocumentStore(generate.configuration.site.destination.store_path)
-    generate.environment[DOCUMENT_STORE] = document_store
+def process_files(incontext, options, handlers):
+    document_store = store.DocumentStore(incontext.configuration.site.destination.store_path)
+    incontext.environment[DOCUMENT_STORE] = document_store
 
     logging.info("Generating intermediates...")
-    phase1 = Phase(os.path.join(generate.configuration.site.destination.root_directory, "phase-1-generate-intermediates.json"),
-                   generate.configuration.site.paths.content,
+    phase1 = Phase(os.path.join(incontext.configuration.site.destination.root_directory, "phase-1-generate-intermediates.json"),
+                   incontext.configuration.site.paths.content,
                    document_store)
     for task in handlers:
-        fn = generate.get_handler(task["then"])
+        fn = incontext.get_handler(task["then"])
         args = task["args"] if "args" in task else {}
-        phase1.add_task(task['when'], fn(generate,
-                                         from_directory=generate.configuration.site.paths.content,
-                                         to_directory=generate.configuration.site.destination.files_directory,
+        phase1.add_task(task['when'], fn(incontext,
+                                         from_directory=incontext.configuration.site.paths.content,
+                                         to_directory=incontext.configuration.site.destination.files_directory,
                                          **args))
     phase1.process()
 
     # Renders are dependent on the templates, so we hash all the templates and add this into the hash for the page
     # renders to ensure everything is re-rendered whenever a template changes. It should be possible to track the
     # templates used in render in the future if we need to make this faster.
-    templates = [os.path.join(*paths) for paths in utils.find_files(generate.configuration.site.paths.templates)]
+    templates = [os.path.join(*paths) for paths in utils.find_files(incontext.configuration.site.paths.templates)]
     template_mtimes = [os.path.getmtime(path) for path in templates]
     template_hash = utils.hash_items(template_mtimes)
 
     logging.info("Render content cache...")
-    cache_path = os.path.join(generate.configuration.site.destination.root_directory, "phase-6-render-content.json")
+    cache_path = os.path.join(incontext.configuration.site.destination.root_directory, "phase-6-render-content.json")
     render_change_tracker = tracker.ChangeTracker(cache_path)
-    website = Website(incontext=generate)
+    website = Website(incontext=incontext)
     for document in website.documents():
         def render_outer(document):
             def render(url):
@@ -193,10 +193,10 @@ def process_files(generate, options, handlers):
             pass
         hash = utils.hash_items([template_hash, document.hash] + document.evaluate_queries(queries))
         render_change_tracker.add(path=document.url, create=render_outer(document), mtime=hash)
-    render_change_tracker.commit(cleanup(root=generate.configuration.site.destination.root_directory,
+    render_change_tracker.commit(cleanup(root=incontext.configuration.site.destination.root_directory,
                                          document_store=document_store))
 
-    touch(generate.configuration.site.destination.store_path)
+    touch(incontext.configuration.site.destination.store_path)
 
 
 class Website(object):
@@ -212,6 +212,8 @@ class Website(object):
             website = importlib.util.module_from_spec(website_spec)
             website_spec.loader.exec_module(website)
             self.website = website
+            for name, f in incontext.context_functions.items():
+                self.website.app.jinja_env.globals.update(**{name: f})
             self.website.initialize(templates_path=self.templates_path,
                                     store_path=incontext.configuration.site.destination.store_path,
                                     config=incontext.configuration.site.config)

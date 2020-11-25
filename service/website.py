@@ -444,23 +444,6 @@ app.add_template_filter(filter_base64, name='base64')
 app.add_template_filter(filter_render_template, name='render_template')
 
 
-def contextfunction_generate_uuid():
-    return str(uuid.uuid1())
-    
-    
-def contextfunction_now():
-    return datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
-    
-    
-def contextfunction_date(date):
-    return dateutil.parser.parse(date).replace(tzinfo=pytz.utc)
-
-
-app.jinja_env.globals.update(generate_uuid=contextfunction_generate_uuid)
-app.jinja_env.globals.update(now=contextfunction_now)
-app.jinja_env.globals.update(date=contextfunction_date)
-
-
 def fixup_relative_url(url, page_path):
     o = urllib.parse.urlparse(url)
     if o.scheme == '' and o.netloc == '' and not o.path.startswith('/') and not url.startswith('#'):

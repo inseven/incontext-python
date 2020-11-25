@@ -35,6 +35,24 @@ logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO, format="[%
 
 sys.path.append(PLUGINS_DIRECTORY)
 
+# Global plugin state.
+# This might behave in a slightly unexpected way as it's not truly global due to the way plugins are loaded--each
+# plugin has its own instance of the incontext module, with it's own global plugin state. When the plugin is loaded
+# the loading instance if InContext copies that plugin's global plugin state for later use.
+# Doing it this way allows for the far more lightweight decorator approach to registering plugins.
+CONTEXT_FUNCTIONS = {}
+
+
+def context_function(name):
+    """
+    Register a new Jinja2 context function for use when rendering the site.
+    """
+    def decorator(f):
+        CONTEXT_FUNCTIONS[name] = f
+        return f
+    return decorator
+
+
 class Configuration(object):
 
     def __init__(self):
@@ -71,6 +89,7 @@ class InContext(object):
         self.configuration_providers = {}
         self.configuration = Configuration()
         self.commands = {}
+        self._context_functions =  dict(CONTEXT_FUNCTIONS)
 
         # Load the plugins.
         for plugin in glob.glob(os.path.join(self.plugins_directory, "*.py")):
@@ -86,11 +105,24 @@ class InContext(object):
 
         # Initialize the plugins.
         for plugin_name, plugin_instance in self.plugins.items():
+            
+            # Load the classic method-based plugins.
             if hasattr(plugin_instance, 'initialize_plugin'):
-                logging.debug("Initializing '%s'...", plugin_name)
+                logging.debug("Initializing legacy plugin '%s'...", plugin_name)
                 plugin_instance.initialize_plugin(self)
-            else:
-                logging.debug("Ignoring '%s'...", plugin_name)
+
+            # Load the decorator-based plugins by copying in their 'global' state.
+            if hasattr(plugin_instance, 'incontext'):
+                logging.debug("Initializing plugin '%s'...", plugin_name)
+                for name, f in plugin_instance.incontext.CONTEXT_FUNCTIONS.items():
+                    self._context_functions[name] = f
+                
+    @property
+    def context_functions(self):
+        """
+        Return a dictionary of additional context functions that will be available to the Jinja templating at render time.
+        """
+        return self._context_functions
 
     def add_argument(self, *args, **kwargs):
         """
