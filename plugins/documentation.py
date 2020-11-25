@@ -46,11 +46,11 @@ INDEX_TEMPLATE = """
 """
 
 
-def initialize_plugin(generate):
-    generate.add_command("build-documentation", command_build_documentation, help="Build the documentation.")
+def initialize_plugin(incontext):
+    incontext.add_command("build-documentation", command_build_documentation, help="Build the documentation.")
 
 
-def command_build_documentation(generate, parser):
+def command_build_documentation(incontext, parser):
     parser.add_argument("output", help="output directory")
 
     def do_tests(options):
