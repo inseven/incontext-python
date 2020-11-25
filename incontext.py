@@ -216,7 +216,7 @@ class InContext(object):
 
 def main():
     """
-    Entry-point for the InContext cli. Should not be called directly.
+    Entry-point for the command line. Should not be called directly.
     """
     instance = InContext(plugins_directory=PLUGINS_DIRECTORY)
     instance.run()
