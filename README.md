@@ -78,15 +78,6 @@ InContext uses [Jinja2](https://jinja.palletsprojects.com/en/2.11.x/) for templa
 
 InContext provides a number of additional Jinja2 filters and context functions to make certain tasks easier.
 
-#### Date
-
-```
-{% set d = date("1982-12-28") %}
-{{ d }}
-```
-
-Initialize a date (with timezone) corresponding with a specific string representation.
-
 #### Generate UUID
 
 ```

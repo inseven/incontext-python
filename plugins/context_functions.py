@@ -32,6 +32,14 @@ def now():
     """
     Return the current date in UTC.
     
+    For example,
+    
+    ```
+    <p>Rendered at {{ now() }}.</p>
+    ```
+    
+    If you need to use the exact same date more than once in a render, set it as a variable as follows:
+    
     ```
     {% set d = now() %}
     {{ d }}
@@ -50,4 +58,16 @@ def generate_uuid():
 
 @incontext.context_function(name="date")
 def date(date):
+    """
+    Initialize a date (with timezone) corresponding with a specific string representation.
+    
+    For example,
+    
+    ```
+    {% set d = date("1982-12-28") %}
+    {{ d }}
+    ```
+    
+    Like `now`, this guarantees that the returned date has an associated timezone to allow safe comparison.
+    """
     return dateutil.parser.parse(date).replace(tzinfo=pytz.utc)
