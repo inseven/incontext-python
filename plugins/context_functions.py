@@ -57,9 +57,9 @@ def generate_uuid():
     
 
 @incontext.context_function(name="date")
-def date(date):
+def date(timestr):
     """
-    Initialize a date (with timezone) corresponding with a specific string representation.
+    Return a date corresponding with a specific string representation, `timestr`.
     
     For example,
     
@@ -70,4 +70,4 @@ def date(date):
     
     Like `now`, this guarantees that the returned date has an associated timezone to allow safe comparison.
     """
-    return dateutil.parser.parse(date).replace(tzinfo=pytz.utc)
+    return dateutil.parser.parse(timestr).replace(tzinfo=pytz.utc)
