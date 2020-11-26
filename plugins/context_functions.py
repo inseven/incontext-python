@@ -29,6 +29,17 @@ import incontext
 
 @incontext.context_function(name="now")
 def now():
+    """
+    Return the current date in UTC.
+    
+    ```
+    {% set d = now() %}
+    {{ d }}
+    ```
+    
+    This ensures the date has an associated timezone so it can be compared with other dates with timezone (as are found
+    in fully specified [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) dates.
+    """
     return datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
 
 
