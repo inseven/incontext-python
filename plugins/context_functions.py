@@ -53,6 +53,21 @@ def now():
 
 @incontext.context_function(name="generate_uuid")
 def generate_uuid():
+    """
+    Return a new UUID.
+    
+    Intended to make it easy to generate unique identifiers when writing inline HTML and JavaScript.
+    
+    For example,
+
+    ```
+    {% set uuid = generate_uuid() %}
+    <div id="{{ uuid }}">
+        Your content here.
+    </div>
+    <button onclick="toggleVisibility('{{ uuid }}')">Toggle Content</button>
+    ```
+    """
     return str(uuid.uuid1())
     
 
