@@ -78,15 +78,6 @@ InContext uses [Jinja2](https://jinja.palletsprojects.com/en/2.11.x/) for templa
 
 InContext provides a number of additional Jinja2 filters and context functions to make certain tasks easier.
 
-#### Now
-
-```
-{% set d = now() %}
-{{ d }}
-```
-
-Return the current date in UTC (with timezone).
-
 #### Date
 
 ```
