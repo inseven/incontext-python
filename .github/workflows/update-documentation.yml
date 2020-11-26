@@ -16,4 +16,4 @@ jobs:
       with:
         token: ${{ secrets.TOKEN }}
         repository: inseven/incontext-site
-        event-type: build
+        event-type: update-documentation
