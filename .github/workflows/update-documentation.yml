@@ -1,4 +1,4 @@
-name: Build
+name: Update documentation
 
 on:
   push:
