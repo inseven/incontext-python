@@ -81,12 +81,14 @@ Should not be manipulated directly.
 """
 
 
-def context_function(name):
+def context_function(name=None):
     """
-    Register a new Jinja2 context function for use when rendering the site.
+    Register a new Jinja context function, to be made available at template render as `name`.
+    
+    If `name` is not specified, the function name is used.
     """
     def decorator(f):
-        _PLUGINS.add_plugin(PLUGIN_TYPE_CONTEXT_FUNCTION, name, f)
+        _PLUGINS.add_plugin(PLUGIN_TYPE_CONTEXT_FUNCTION, name if name is not None else f.__name__, f)
         return f
     return decorator
 

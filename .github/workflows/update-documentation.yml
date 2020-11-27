@@ -1,0 +1,19 @@
+name: Update documentation
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  run:
+
+    runs-on: Ubuntu-20.04
+
+    steps:
+      
+    - name: Trigger documentation update
+      uses: peter-evans/repository-dispatch@v1
+      with:
+        token: ${{ secrets.TOKEN }}
+        repository: inseven/incontext-site
+        event-type: update-documentation

@@ -74,39 +74,6 @@ sort: descending
 
 InContext uses [Jinja2](https://jinja.palletsprojects.com/en/2.11.x/) for templating with some additional custom filters. Check out the Jinja2 [Template Designer Documentation](https://jinja.palletsprojects.com/en/2.11.x/templates/) for basic usage.
 
-### Additional Filters
-
-InContext provides a number of additional Jinja2 filters and context functions to make certain tasks easier.
-
-#### Now
-
-```
-{% set d = now() %}
-{{ d }}
-```
-
-Return the current date in UTC (with timezone).
-
-#### Date
-
-```
-{% set d = date("1982-12-28") %}
-{{ d }}
-```
-
-Initialize a date (with timezone) corresponding with a specific string representation.
-
-#### Generate UUID
-
-```
-{% set uuid = generate_uuid() %}
-{{ uuid }}
-```
-
-Return a new UUID.
-
-`generate_uuid` is intended to make it easy to generate unique identifiers when writing inline HTML and JavaScript.
-
 ## History
 
 InContext is named after a Perl static site generator I wrote in 2005 (and [failed to publish](https://jbmorley.co.uk/posts/2005-06-24-incontext/)). Back then, every piece of software I wrote was named with the 'In' prefix in keeping with my [in7.co.uk](https://in7.co.uk) domain name (e.g., [InJapan](https://github.com/jbmorley/injapan), [InModem](https://github.com/jbmorley/InModem)). Hopefully this is more widely useful than my first attempt.
