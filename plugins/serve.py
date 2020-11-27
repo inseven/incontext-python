@@ -64,10 +64,6 @@ def watch_directory(paths, callback):
     return observer
 
 
-def initialize_plugin(incontext):
-    incontext.add_command("serve", command_serve, help="serve a local copy of the site using a Docker nginx container")
-
-
 class Builder(threading.Thread):
 
     def __init__(self, incontext, *args, **kwargs):
@@ -104,6 +100,13 @@ class Builder(threading.Thread):
                     logging.error("Failed: %s", e)
 
 
+def docker(command):
+    prefix = []
+    if sys.platform == "linux":
+        prefix = ["sudo"]
+    return subprocess.run(prefix + ["docker"] + command)
+
+
 @incontext.command("watch", help="watch for changes and automatically build the website")
 def command_watch(incontext, options):
     builder = Builder(incontext)
@@ -124,22 +127,14 @@ def command_watch(incontext, options):
     builder.join()
 
 
-def docker(command):
-    prefix = []
-    if sys.platform == "linux":
-        prefix = ["sudo"]
-    return subprocess.run(prefix + ["docker"] + command)
-
-
+@incontext.command("serve", help="serve a local copy of the site using a Docker nginx container")
 def command_serve(incontext, parser):
-    def do_serve(options):
-        container = "incontext-nginx"
-        docker(["rm", "--force", container])
-        docker(["run", "--name", container,
-                "--restart", "always",
-                "-d",
-                "-p", "80:80",
-                "-v", f"{incontext.configuration.site.destination.files_directory}:/usr/share/nginx/html",
-                "-v", f"{os.path.join(paths.ROOT_DIR, 'nginx.conf')}:/etc/nginx/conf.d/default.conf",
-                "nginx"])
-    return do_serve
+    container = "incontext-nginx"
+    docker(["rm", "--force", container])
+    docker(["run", "--name", container,
+            "--restart", "always",
+            "-d",
+            "-p", "80:80",
+            "-v", f"{incontext.configuration.site.destination.files_directory}:/usr/share/nginx/html",
+            "-v", f"{os.path.join(paths.ROOT_DIR, 'nginx.conf')}:/etc/nginx/conf.d/default.conf",
+            "nginx"])
