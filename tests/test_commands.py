@@ -22,6 +22,7 @@
 
 import os
 import sys
+import tempfile
 import unittest
 
 import common
@@ -61,3 +62,9 @@ class CommandsTestCase(unittest.TestCase):
             self.assertTrue(os.path.isdir(os.path.join(site.path, "build")))
             common.run_incontext(["clean"], plugins_directory=paths.PLUGINS_DIR)
             self.assertFalse(os.path.exists(os.path.join(site.path, "build")))
+
+    def test_build_documentation(self):
+        with tempfile.TemporaryDirectory() as path:
+            self.assertEqual(len(os.listdir(path)), 0)
+            common.run_incontext(["build-documentation", path], plugins_directory=paths.PLUGINS_DIR)
+            self.assertGreater(len(os.listdir(path)), 0)
