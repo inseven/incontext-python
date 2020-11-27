@@ -25,11 +25,6 @@ import os
 import sys
 import unittest
 
-TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
-SCRIPTS_DIR = os.path.dirname(TESTS_DIR)
-
-sys.path.append(SCRIPTS_DIR)
-
 import converters
 
 

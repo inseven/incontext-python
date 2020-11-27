@@ -18,6 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import os
 import subprocess
 
 import incontext
@@ -26,4 +27,6 @@ import paths
 
 @incontext.command("tests", help="Run the tests")
 def command_tests(incontext, options):
-	subprocess.check_call(["nosetests", "-v", paths.TESTS_DIR])
+    environment = dict(os.environ)
+    environment["PYTHONPATH"] = paths.SCRIPTS_DIR
+    subprocess.check_call(["nosetests", "-v", paths.TESTS_DIR], env=environment)
