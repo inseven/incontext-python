@@ -266,7 +266,7 @@ class InContext(object):
         """
         return self.handlers[name]
 
-    def run(self):
+    def run(self, args):
         """
         Parse the command line arguments and execute the requested command.
         """
@@ -276,7 +276,7 @@ class InContext(object):
             function(self)
 
         # Parse the arguments.       
-        options = self.parser.parse_args()
+        options = self.parser.parse_args(args)
         for name, configuration_provider in self.configuration_providers.items():
             self.configuration.add(name, configuration_provider(self, options))
         if 'fn' not in options:
@@ -290,7 +290,7 @@ def main():
     Entry-point for the command line. Should not be called directly.
     """
     instance = InContext(plugins_directory=PLUGINS_DIRECTORY)
-    instance.run()
+    instance.run(sys.argv[1:])
 
 
 if __name__ == "__main__":

@@ -103,7 +103,7 @@ def directory_mtime(path):
     for root, dirs, files in os.walk(path):
         for name in files:
             mtimes.append(os.path.getmtime(os.path.join(root, name)))
-    return max(mtimes)
+    return max(mtimes) if mtimes else 0
 
 
 def wrap_document(document):

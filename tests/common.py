@@ -22,33 +22,45 @@
 
 import os
 import sys
-import unittest
+import tempfile
+
+import yaml
 
 TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
 SCRIPTS_DIR = os.path.dirname(TESTS_DIR)
 
 sys.path.append(SCRIPTS_DIR)
 
-import common
-
-import incontext
-import paths
 import utils
 
 
-class PluginsTestCase(unittest.TestCase):
+class TemporarySite(object):
+    """
+    Context handler which creates a temporary site for testing.
+    """
     
-    def test_expected_plugins(self):
-        instance = incontext.InContext(plugins_directory=paths.PLUGINS_DIR)
-        self.assertIsInstance(instance.plugins, incontext.Plugins)
-        self.assertEqual(set(instance.plugins.plugins(incontext.PLUGIN_TYPE_COMMAND).keys()),
-                             {
-                                 "add",
-                                 "build",
-                                 "build-documentation",
-                                 "clean",
-                                 "publish",
-                                 "serve",
-                                 "tests",
-                                 "watch",
-                             })
+    def __init__(self, configuration):
+        self.configuration = configuration
+        
+    @property
+    def path(self):
+        return self.temporary_directory.name
+    
+    def __enter__(self):
+        self.pwd = os.getcwd()
+        self.temporary_directory = tempfile.TemporaryDirectory()
+        
+        # Create the configuration file.
+        with open(os.path.join(self.temporary_directory.name, "site.yaml"), "w") as fh:
+            yaml.dump(self.configuration, fh)
+        
+        # Create the required directories.
+        utils.makedirs(os.path.join(self.temporary_directory.name, "content"))
+        utils.makedirs(os.path.join(self.temporary_directory.name, "templates"))
+            
+        os.chdir(self.temporary_directory.name)
+        return self
+        
+    def __exit__(self, exc_type, exc_value, traceback):
+        os.chdir(self.pwd)
+        self.temporary_directory.cleanup()
