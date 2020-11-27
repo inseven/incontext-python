@@ -142,7 +142,6 @@ class InContext(object):
         @type plugins_directory: str
         """
         self.plugins_directory = os.path.abspath(plugins_directory)
-        self.plugins = {}
         self.handlers = {}
         self.tasks = {}
         self.environment = {}
@@ -151,12 +150,16 @@ class InContext(object):
         self.configuration_providers = {}
         self.configuration = Configuration()
         self.commands = {}
-        self._plugins = _PLUGINS
+        self.plugins = _PLUGINS
+        """
+        Returns the registered plugins stored in a `Plugins` instance.
+        """
 
         # Load the plugins.
+        plugins = {}
         for plugin in glob.glob(os.path.join(self.plugins_directory, "*.py")):
             identifier = os.path.splitext(os.path.relpath(plugin, self.plugins_directory))[0].replace('/', '_')
-            self.plugins[identifier] = importlib.import_module(identifier, plugin)
+            plugins[identifier] = importlib.import_module(identifier, plugin)
 
         # Create the argument parser.
         self.parser = argparse.ArgumentParser(prog="incontext", description="Generate website.")
@@ -166,7 +169,7 @@ class InContext(object):
         self.subparsers = self.parser.add_subparsers(help="command to run")
 
         # Initialize the plugins.
-        for plugin_name, plugin_instance in self.plugins.items():
+        for plugin_name, plugin_instance in plugins.items():
             
             # Load the classic method-based plugins.
             if hasattr(plugin_instance, 'initialize_plugin'):
@@ -176,14 +179,14 @@ class InContext(object):
             # Load the decorator-based plugins by copying in their 'global' state.
             if hasattr(plugin_instance, 'incontext'):
                 logging.debug("Initializing plugin '%s'...", plugin_name)
-                self._plugins.extend(plugin_instance.incontext._PLUGINS)
+                self.plugins.extend(plugin_instance.incontext._PLUGINS)
                 
     @property
     def context_functions(self):
         """
         Return a dictionary of additional context functions that will be available to the Jinja templating at render time.
         """
-        return self._plugins.plugins(PLUGIN_TYPE_CONTEXT_FUNCTION)
+        return self.plugins.plugins(PLUGIN_TYPE_CONTEXT_FUNCTION)
 
     def add_argument(self, *args, **kwargs):
         """
@@ -209,7 +212,7 @@ class InContext(object):
         @param help: The help string that describes the command to be printed when the user passes the '--help' flag.
         @type help: str
         """
-        self._plugins.add_plugin(PLUGIN_TYPE_COMMAND, name, wrap_add_command(name, function, help))
+        self.plugins.add_plugin(PLUGIN_TYPE_COMMAND, name, wrap_add_command(name, function, help))
         
     def _add_command(self, name, function, help):
         parser = self.subparsers.add_parser(name, help=help)
@@ -269,7 +272,7 @@ class InContext(object):
         """
         
         # Prepare the commands for running.
-        for function in self._plugins.plugins(PLUGIN_TYPE_COMMAND).values():
+        for function in self.plugins.plugins(PLUGIN_TYPE_COMMAND).values():
             function(self)
 
         # Parse the arguments.       

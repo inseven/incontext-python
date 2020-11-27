@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+#
 # Copyright (c) 2016-2020 InSeven Limited
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,10 +20,32 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import os.path
+import os
+import sys
+import unittest
 
-SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = os.path.dirname(SCRIPTS_DIR)
-TESTS_DIR = os.path.join(SCRIPTS_DIR, "tests")
-SERVICE_DIR = os.path.join(SCRIPTS_DIR, "service")
-PLUGINS_DIR = os.path.join(SCRIPTS_DIR, "plugins")
+TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
+SCRIPTS_DIR = os.path.dirname(TESTS_DIR)
+
+sys.path.append(SCRIPTS_DIR)
+
+import incontext
+import paths
+
+
+class PluginsTestCase(unittest.TestCase):
+    
+    def test_expected_plugins(self):
+        instance = incontext.InContext(plugins_directory=paths.PLUGINS_DIR)
+        self.assertIsInstance(instance.plugins, incontext.Plugins)
+        self.assertEqual(set(instance.plugins.plugins(incontext.PLUGIN_TYPE_COMMAND).keys()),
+                             {
+                                 "add",
+                                 "build",
+                                 "build-documentation",
+                                 "clean",
+                                 "publish",
+                                 "serve",
+                                 "tests",
+                                 "watch",
+                             })
