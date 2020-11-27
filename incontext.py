@@ -40,6 +40,13 @@ logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO, format="[%
 sys.path.append(PLUGINS_DIRECTORY)
 
 
+class CommandArgument(object):
+    
+    def __init__(self, *args, **kwargs):
+        self.args = args
+        self.kwargs = kwargs
+
+
 class Plugins(object):
     """
     Centralised mechanism for storing references to plugins by type.
@@ -100,7 +107,7 @@ def command(name, help=None, arguments=[]):
     def decorator(f):
         def add_command_callback(incontext, parser):
             for argument in arguments:
-                parser.add_argument(**argument)
+                parser.add_argument(*(argument.args), **(argument.kwargs))
             def callback_wrapper(options):
                 return f(incontext, options)
             return callback_wrapper

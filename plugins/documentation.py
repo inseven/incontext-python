@@ -25,6 +25,7 @@ import os
 
 import jinja2
 
+import incontext
 import paths
 import utils
 
@@ -46,35 +47,30 @@ INDEX_TEMPLATE = """
 """
 
 
-def initialize_plugin(incontext):
-    incontext.add_command("build-documentation", command_build_documentation, help="Build the documentation.")
-
-
-def command_build_documentation(incontext, parser):
-    parser.add_argument("output", help="output directory")
-
-    def do_tests(options):
-        documentation_directory = os.path.abspath(options.output)
+@incontext.command("build-documentation", help="Build the documentation.",
+                   arguments=[
+                       incontext.CommandArgument("output", help="output directory"),
+                   ])
+def command_build_documentation(incontext, options):
+    documentation_directory = os.path.abspath(options.output)
+    
+    with utils.Chdir(paths.SCRIPTS_DIR):
         
-        with utils.Chdir(paths.SCRIPTS_DIR):
-            
-            # Look up the python files to document.
-            files = glob.glob("*.py") + glob.glob("plugins/*.py")
-            modules = [os.path.splitext(f)[0] for f in files]
-            
-            # Generate the Python documentation.
-            for f in files:
-                output_directory = os.path.join(documentation_directory, os.path.dirname(f))
-                utils.makedirs(output_directory)
-                subprocess.check_call(["pdoc", 
-                                       "--html",
-                                       "--output-dir", output_directory,
-                                       "--force",
-                                       f])
-                                  
-            # Create an index page.
-            with open(os.path.join(documentation_directory, "index.html"), "w") as fh:
-                template = jinja2.Template(INDEX_TEMPLATE)
-                fh.write(template.render(modules=modules))
-
-    return do_tests
+        # Look up the python files to document.
+        files = glob.glob("*.py") + glob.glob("plugins/*.py")
+        modules = [os.path.splitext(f)[0] for f in files]
+        
+        # Generate the Python documentation.
+        for f in files:
+            output_directory = os.path.join(documentation_directory, os.path.dirname(f))
+            utils.makedirs(output_directory)
+            subprocess.check_call(["pdoc", 
+                                   "--html",
+                                   "--output-dir", output_directory,
+                                   "--force",
+                                   f])
+                              
+        # Create an index page.
+        with open(os.path.join(documentation_directory, "index.html"), "w") as fh:
+            template = jinja2.Template(INDEX_TEMPLATE)
+            fh.write(template.render(modules=modules))
