@@ -32,6 +32,7 @@ import webbrowser
 import watchdog.events
 import watchdog.observers
 
+import incontext
 import paths
 
 
@@ -64,7 +65,6 @@ def watch_directory(paths, callback):
 
 
 def initialize_plugin(incontext):
-    incontext.add_command("watch", command_watch, help="watch for changes and automatically build the website")
     incontext.add_command("serve", command_serve, help="serve a local copy of the site using a Docker nginx container")
 
 
@@ -104,25 +104,24 @@ class Builder(threading.Thread):
                     logging.error("Failed: %s", e)
 
 
-def command_watch(incontext, parser):
-    def do_watch(options):
-        builder = Builder(incontext)
-        builder.start()
-        logging.info("Watching directory...")
-        observer = watch_directory([incontext.configuration.site.paths.content,
-                                    incontext.configuration.site.paths.templates],
-                                   builder.schedule)
-        logging.info("Performing initial build...")
-        builder.schedule()
-        try:
-            while True:
-                time.sleep(0.2)
-        except KeyboardInterrupt:
-            builder.stop()
-            observer.stop()
-        observer.join()
-        builder.join()
-    return do_watch
+@incontext.command("watch", help="watch for changes and automatically build the website")
+def command_watch(incontext, options):
+    builder = Builder(incontext)
+    builder.start()
+    logging.info("Watching directory...")
+    observer = watch_directory([incontext.configuration.site.paths.content,
+                                incontext.configuration.site.paths.templates],
+                               builder.schedule)
+    logging.info("Performing initial build...")
+    builder.schedule()
+    try:
+        while True:
+            time.sleep(0.2)
+    except KeyboardInterrupt:
+        builder.stop()
+        observer.stop()
+    observer.join()
+    builder.join()
 
 
 def docker(command):

@@ -21,6 +21,7 @@
 # SOFTWARE.
 
 import argparse
+import collections
 import glob
 import importlib
 import logging
@@ -30,17 +31,54 @@ import sys
 SCRIPT_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 PLUGINS_DIRECTORY = os.path.join(SCRIPT_DIRECTORY, "plugins")
 
+PLUGIN_TYPE_CONTEXT_FUNCTION = "context_function"
+PLUGIN_TYPE_COMMAND = "command"
+
 verbose = '--verbose' in sys.argv[1:] or '-v' in sys.argv[1:]
 logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO, format="[%(levelname)s] %(message)s")
 
 sys.path.append(PLUGINS_DIRECTORY)
 
-# Global plugin state.
-# This might behave in a slightly unexpected way as it's not truly global due to the way plugins are loaded--each
-# plugin has its own instance of the incontext module, with it's own global plugin state. When the plugin is loaded
-# the loading instance if InContext copies that plugin's global plugin state for later use.
-# Doing it this way allows for the far more lightweight decorator approach to registering plugins.
-CONTEXT_FUNCTIONS = {}
+
+class Plugins(object):
+    """
+    Centralised mechanism for storing references to plugins by type.
+    
+    InContext allows for plugins to be registered either module-wide (via to `incontext` decorators), or by providing
+    an implementation of the `initialize_plugin` function and registering plugins directly with the `InContext`
+    instance passed in. In both of these situations, registered plugins are stored in an instance of the `Plugins` class.
+    
+    Instances of the `incontext` have a module-scoped instance of `Plugins` (`incontext._PLUGINS`) which is added to the
+    runtime instance using the `extend` method when plugins are loaded.
+    """
+    
+    def __init__(self):
+        self._plugins_by_type = collections.defaultdict(dict)
+        
+    def add_plugin(self, plugin_type, name, plugin):
+        self._plugins_by_type[plugin_type][name] = plugin
+        
+    def plugin_types():
+        return self._plugins_by_type.values()
+        
+    def plugins(self, plugin_type):
+        return self._plugins_by_type[plugin_type]
+        
+    def extend(self, plugins):
+        """
+        Add all of the plugins in `plugins` (type `Plugins`) to the current instance.
+        """
+        for plugin_type, plugin_plugins in plugins._plugins_by_type.items():
+            for name, plugin in plugin_plugins.items():
+                self.add_plugin(plugin_type, name, plugin)
+                
+                
+_PLUGINS = Plugins()
+"""
+Module-scoped plugin instances (used with decorator-based plugin registration).
+
+Should not be manipulated directly.
+"""
 
 
 def context_function(name):
@@ -48,9 +86,31 @@ def context_function(name):
     Register a new Jinja2 context function for use when rendering the site.
     """
     def decorator(f):
-        CONTEXT_FUNCTIONS[name] = f
+        _PLUGINS.add_plugin(PLUGIN_TYPE_CONTEXT_FUNCTION, name, f)
         return f
     return decorator
+
+
+def command(name, help=None, arguments=[]):
+    """
+    Register a new command.
+    """
+    def decorator(f):
+        def add_command_callback(incontext, parser):
+            for argument in arguments:
+                parser.add_argument(**argument)
+            def callback_wrapper(options):
+                return f(incontext, options)
+            return callback_wrapper
+        _PLUGINS.add_plugin(PLUGIN_TYPE_COMMAND, name, wrap_add_command(name, add_command_callback, help))
+        return f
+    return decorator
+    
+    
+def wrap_add_command(name, f, help):
+    def add_command(incontext):
+        return incontext._add_command(name, f, help)
+    return add_command
 
 
 class Configuration(object):
@@ -89,7 +149,7 @@ class InContext(object):
         self.configuration_providers = {}
         self.configuration = Configuration()
         self.commands = {}
-        self._context_functions =  dict(CONTEXT_FUNCTIONS)
+        self._plugins = _PLUGINS
 
         # Load the plugins.
         for plugin in glob.glob(os.path.join(self.plugins_directory, "*.py")):
@@ -114,15 +174,14 @@ class InContext(object):
             # Load the decorator-based plugins by copying in their 'global' state.
             if hasattr(plugin_instance, 'incontext'):
                 logging.debug("Initializing plugin '%s'...", plugin_name)
-                for name, f in plugin_instance.incontext.CONTEXT_FUNCTIONS.items():
-                    self._context_functions[name] = f
+                self._plugins.extend(plugin_instance.incontext._PLUGINS)
                 
     @property
     def context_functions(self):
         """
         Return a dictionary of additional context functions that will be available to the Jinja templating at render time.
         """
-        return self._context_functions
+        return self._plugins.plugins(PLUGIN_TYPE_CONTEXT_FUNCTION)
 
     def add_argument(self, *args, **kwargs):
         """
@@ -148,13 +207,14 @@ class InContext(object):
         @param help: The help string that describes the command to be printed when the user passes the '--help' flag.
         @type help: str
         """
+        self._plugins.add_plugin(PLUGIN_TYPE_COMMAND, name, wrap_add_command(name, function, help))
+        
+    def _add_command(self, name, function, help):
         parser = self.subparsers.add_parser(name, help=help)
         fn = function(self, parser)
         parser.set_defaults(fn=fn)
-
         def command_runner(**kwargs):
             fn(Namespace(**kwargs))
-
         self.commands[name] = command_runner
 
     def add_configuration_provider(self, name, function):
@@ -205,6 +265,12 @@ class InContext(object):
         """
         Parse the command line arguments and execute the requested command.
         """
+        
+        # Prepare the commands for running.
+        for function in self._plugins.plugins(PLUGIN_TYPE_COMMAND).values():
+            function(self)
+
+        # Parse the arguments.       
         options = self.parser.parse_args()
         for name, configuration_provider in self.configuration_providers.items():
             self.configuration.add(name, configuration_provider(self, options))
