@@ -20,16 +20,10 @@
 
 import subprocess
 
+import incontext
 import paths
 
 
-def initialize_plugin(incontext):
-    incontext.add_command("tests", command_tests, help="Test the utilities.")
-
-
-def command_tests(incontext, parser):
-
-    def do_tests(options):
-    	subprocess.check_call(["nosetests", "-v", paths.TESTS_DIR])
-
-    return do_tests
+@incontext.command("tests", help="Run the tests")
+def command_tests(incontext, options):
+	subprocess.check_call(["nosetests", "-v", paths.TESTS_DIR])

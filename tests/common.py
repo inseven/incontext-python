@@ -31,6 +31,7 @@ SCRIPTS_DIR = os.path.dirname(TESTS_DIR)
 
 sys.path.append(SCRIPTS_DIR)
 
+import incontext
 import utils
 
 
@@ -64,3 +65,8 @@ class TemporarySite(object):
     def __exit__(self, exc_type, exc_value, traceback):
         os.chdir(self.pwd)
         self.temporary_directory.cleanup()
+
+
+def run_incontext(args, plugins_directory=None):
+    instance = incontext.InContext(plugins_directory=plugins_directory)
+    instance.run(args)

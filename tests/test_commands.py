@@ -31,14 +31,8 @@ sys.path.append(SCRIPTS_DIR)
 
 import common
 
-import incontext
 import paths
 import utils
-
-
-def run_incontext(args):
-    instance = incontext.InContext(plugins_directory=paths.PLUGINS_DIR)
-    instance.run(args)
 
 
 class CommandsTestCase(unittest.TestCase):
@@ -68,7 +62,7 @@ class CommandsTestCase(unittest.TestCase):
         }
         with common.TemporarySite(configuration=configuration) as site:
             self.assertFalse(os.path.exists(os.path.join(site.path, "build")))
-            run_incontext(["build"])
+            common.run_incontext(["build"], plugins_directory=paths.PLUGINS_DIR)
             self.assertTrue(os.path.isdir(os.path.join(site.path, "build")))
-            run_incontext(["clean"])
+            common.run_incontext(["clean"], plugins_directory=paths.PLUGINS_DIR)
             self.assertFalse(os.path.exists(os.path.join(site.path, "build")))
