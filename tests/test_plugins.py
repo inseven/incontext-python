@@ -22,7 +22,10 @@
 
 import os
 import sys
+import tempfile
 import unittest
+
+import yaml
 
 TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
 SCRIPTS_DIR = os.path.dirname(TESTS_DIR)
@@ -31,6 +34,39 @@ sys.path.append(SCRIPTS_DIR)
 
 import incontext
 import paths
+import utils
+
+
+class TemporarySite(object):
+    """
+    Context handler which creates a temporary site for testing.
+    """
+    
+    def __init__(self, configuration):
+        self.configuration = configuration
+        
+    @property
+    def path(self):
+        return self.temporary_directory.name
+    
+    def __enter__(self):
+        self.pwd = os.getcwd()
+        self.temporary_directory = tempfile.TemporaryDirectory()
+        
+        # Create the configuration file.
+        with open(os.path.join(self.temporary_directory.name, "site.yaml"), "w") as fh:
+            yaml.dump(self.configuration, fh)
+        
+        # Create the required directories.
+        utils.makedirs(os.path.join(self.temporary_directory.name, "content"))
+        utils.makedirs(os.path.join(self.temporary_directory.name, "templates"))
+            
+        os.chdir(self.temporary_directory.name)
+        return self
+        
+    def __exit__(self, exc_type, exc_value, traceback):
+        os.chdir(self.pwd)
+        self.temporary_directory.cleanup()
 
 
 class PluginsTestCase(unittest.TestCase):
@@ -49,3 +85,10 @@ class PluginsTestCase(unittest.TestCase):
                                  "tests",
                                  "watch",
                              })
+
+    def test_create_test_site(self):
+        with TemporarySite(configuration={}) as site:
+            self.assertIsNotNone(site.path)
+            self.assertTrue(os.path.exists(os.path.join(site.path, "site.yaml")))
+            self.assertTrue(os.path.isdir(os.path.join(site.path, "content")))
+            self.assertTrue(os.path.isdir(os.path.join(site.path, "templates")))
