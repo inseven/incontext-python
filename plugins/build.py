@@ -33,6 +33,7 @@ import yaml
 
 import converters
 import gallery
+import incontext
 import paths
 import store
 import tracker
@@ -44,7 +45,6 @@ DOCUMENT_STORE = "DOCUMENT_STORE"
 
 def initialize_plugin(incontext):
     incontext.add_argument("--set", type=str, help="override configuration parameters")
-    incontext.add_command("build", command_build, help="build the website")
     incontext.add_command("clean", command_clean, help="remove the build directory")
     incontext.add_configuration_provider("site", configuration_provider_site)
     incontext.add_handler("import_markdown", import_markdown)
@@ -236,20 +236,17 @@ class Website(object):
             return destination, query_tracker.queries, hashes
 
 
-def command_build(incontext, parser):
+@incontext.command("build", help="build the website")
+def command_build(incontext, options):
 
-    def do_build(options):
+    # Create the build directory.
+    utils.makedirs(incontext.configuration.site.destination.root_directory)
 
-        # Create the build directory.
-        utils.makedirs(incontext.configuration.site.destination.root_directory)
-
-        # Run the build tasks.
-        for task in incontext.configuration.site.build_steps:
-            identifier, args = task["task"], task["args"] if "args" in task else {}
-            logging.info("Running task '%s'..." % identifier)
-            incontext.get_task(identifier)(incontext, options, **args)
-
-    return do_build
+    # Run the build tasks.
+    for task in incontext.configuration.site.build_steps:
+        identifier, args = task["task"], task["args"] if "args" in task else {}
+        logging.info("Running task '%s'..." % identifier)
+        incontext.get_task(identifier)(incontext, options, **args)
 
 
 def command_clean(incontext, parser):
