@@ -45,7 +45,6 @@ DOCUMENT_STORE = "DOCUMENT_STORE"
 
 def initialize_plugin(incontext):
     incontext.add_argument("--set", type=str, help="override configuration parameters")
-    incontext.add_command("clean", command_clean, help="remove the build directory")
     incontext.add_configuration_provider("site", configuration_provider_site)
     incontext.add_handler("import_markdown", import_markdown)
     incontext.add_task("process_files", process_files)
@@ -234,19 +233,16 @@ def command_build(incontext, options):
         incontext.get_task(identifier)(incontext, options, **args)
 
 
-def command_clean(incontext, parser):
+@incontext.command("clean", help="remove the build directory")
+def command_clean(incontext, options):
 
-    def do_clean(options):
+    build_dir = incontext.configuration.site.destination.root_directory
+    if not os.path.exists(build_dir):
+        logging.info("Nothing to do.")
+        return
 
-        build_dir = incontext.configuration.site.destination.root_directory
-        if not os.path.exists(build_dir):
-            logging.info("Nothing to do.")
-            return
-
-        logging.info("Removing '%s'..." % build_dir)
-        shutil.rmtree(build_dir)
-
-    return do_clean
+    logging.info("Removing '%s'..." % build_dir)
+    shutil.rmtree(build_dir)
 
 
 def import_markdown(incontext, from_directory, to_directory, default_category='general'):
