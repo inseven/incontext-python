@@ -51,21 +51,6 @@ def initialize_plugin(incontext):
     incontext.add_task("process_files", process_files)
 
 
-class PropertyDictionary(object):
-
-    def __init__(self, dictionary):
-        self._dictionary = dictionary
-
-    def __getattr__(self, name):
-        return self._dictionary[name]
-
-    def keys(self):
-        return self._dictionary.keys()
-
-    def __getitem__(self, key):
-        return self._dictionary[key]
-
-
 class SiteConfiguration(object):
 
     def __init__(self, path, overrides={}):
@@ -112,13 +97,13 @@ class SiteConfiguration(object):
         }
         paths.update(self._config["paths"])
         # TODO: Ensure the paths are under the root.
-        return PropertyDictionary({name: os.path.join(self._root, os.path.expanduser(path))
-                                   for name, path in paths.items()})
+        return utils.PropertyDictionary({name: os.path.join(self._root, os.path.expanduser(path))
+                                         for name, path in paths.items()})
 
     @property
     def destination(self):
         self._load_configuration()
-        return PropertyDictionary({
+        return utils.PropertyDictionary({
             "root_directory": self.paths.build,
             "files_directory": os.path.join(self.paths.build, "files"),
             "store_path": os.path.join(self.paths.build, "store.sqlite"),
