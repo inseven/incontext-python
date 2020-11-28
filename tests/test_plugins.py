@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+#
 # Copyright (c) 2016-2020 InSeven Limited
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,14 +21,29 @@
 # SOFTWARE.
 
 import os
-import subprocess
+import sys
+import unittest
+
+import common
 
 import incontext
 import paths
+import utils
 
 
-@incontext.command("tests", help="Run the tests")
-def command_tests(incontext, options):
-    environment = dict(os.environ)
-    environment["PYTHONPATH"] = paths.SCRIPTS_DIR
-    subprocess.check_call(["nosetests", "-v", paths.TESTS_DIR], env=environment)
+class PluginsTestCase(unittest.TestCase):
+    
+    def test_expected_plugins(self):
+        instance = incontext.InContext(plugins_directory=paths.PLUGINS_DIR)
+        self.assertIsInstance(instance.plugins, incontext._Plugins)
+        self.assertEqual(set(instance.plugins.plugins(incontext.PLUGIN_TYPE_COMMAND).keys()),
+                             {
+                                 "add",
+                                 "build",
+                                 "build-documentation",
+                                 "clean",
+                                 "publish",
+                                 "serve",
+                                 "tests",
+                                 "watch",
+                             })

@@ -189,7 +189,8 @@ def command_publish(incontext, parser):
 
     def publish(options):
         basename = os.path.basename(options.path)
-        date = datetime.datetime.utcnow().strftime("%Y-%m-%d")
+        date = datetime.datetime.now().strftime("%Y-%m-%d")
+        utils.makedirs(incontext.configuration.site.paths.posts)
         destination = os.path.join(incontext.configuration.site.paths.posts, "%s-%s" % (date, basename))
         logging.info("Publishing to '%s'..." % (os.path.relpath(destination, incontext.configuration.site.root), ))
         shutil.move(os.path.abspath(options.path), destination)

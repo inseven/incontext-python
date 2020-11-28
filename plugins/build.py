@@ -33,6 +33,7 @@ import yaml
 
 import converters
 import gallery
+import incontext
 import paths
 import store
 import tracker
@@ -44,26 +45,9 @@ DOCUMENT_STORE = "DOCUMENT_STORE"
 
 def initialize_plugin(incontext):
     incontext.add_argument("--set", type=str, help="override configuration parameters")
-    incontext.add_command("build", command_build, help="build the website")
-    incontext.add_command("clean", command_clean, help="remove the build directory")
     incontext.add_configuration_provider("site", configuration_provider_site)
     incontext.add_handler("import_markdown", import_markdown)
     incontext.add_task("process_files", process_files)
-
-
-class PropertyDictionary(object):
-
-    def __init__(self, dictionary):
-        self._dictionary = dictionary
-
-    def __getattr__(self, name):
-        return self._dictionary[name]
-
-    def keys(self):
-        return self._dictionary.keys()
-
-    def __getitem__(self, key):
-        return self._dictionary[key]
 
 
 class SiteConfiguration(object):
@@ -111,14 +95,14 @@ class SiteConfiguration(object):
             "templates": "templates",
         }
         paths.update(self._config["paths"])
-        # TODO: Ensure the paths are under the root.
-        return PropertyDictionary({name: os.path.join(self._root, os.path.expanduser(path))
-                                   for name, path in paths.items()})
+        # TODO: Ensure the paths in site.yaml are under the root (https://github.com/inseven/incontext/issues/60)
+        return utils.PropertyDictionary({name: os.path.join(self._root, os.path.expanduser(path))
+                                         for name, path in paths.items()})
 
     @property
     def destination(self):
         self._load_configuration()
-        return PropertyDictionary({
+        return utils.PropertyDictionary({
             "root_directory": self.paths.build,
             "files_directory": os.path.join(self.paths.build, "files"),
             "store_path": os.path.join(self.paths.build, "store.sqlite"),
@@ -236,35 +220,29 @@ class Website(object):
             return destination, query_tracker.queries, hashes
 
 
-def command_build(incontext, parser):
+@incontext.command("build", help="build the website")
+def command_build(incontext, options):
 
-    def do_build(options):
+    # Create the build directory.
+    utils.makedirs(incontext.configuration.site.destination.root_directory)
 
-        # Create the build directory.
-        utils.makedirs(incontext.configuration.site.destination.root_directory)
-
-        # Run the build tasks.
-        for task in incontext.configuration.site.build_steps:
-            identifier, args = task["task"], task["args"] if "args" in task else {}
-            logging.info("Running task '%s'..." % identifier)
-            incontext.get_task(identifier)(incontext, options, **args)
-
-    return do_build
+    # Run the build tasks.
+    for task in incontext.configuration.site.build_steps:
+        identifier, args = task["task"], task["args"] if "args" in task else {}
+        logging.info("Running task '%s'..." % identifier)
+        incontext.get_task(identifier)(incontext, options, **args)
 
 
-def command_clean(incontext, parser):
+@incontext.command("clean", help="remove the build directory")
+def command_clean(incontext, options):
 
-    def do_clean(options):
+    build_dir = incontext.configuration.site.destination.root_directory
+    if not os.path.exists(build_dir):
+        logging.info("Nothing to do.")
+        return
 
-        build_dir = incontext.configuration.site.destination.root_directory
-        if not os.path.exists(build_dir):
-            logging.info("Nothing to do.")
-            return
-
-        logging.info("Removing '%s'..." % build_dir)
-        shutil.rmtree(build_dir)
-
-    return do_clean
+    logging.info("Removing '%s'..." % build_dir)
+    shutil.rmtree(build_dir)
 
 
 def import_markdown(incontext, from_directory, to_directory, default_category='general'):

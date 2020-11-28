@@ -32,6 +32,7 @@ import webbrowser
 import watchdog.events
 import watchdog.observers
 
+import incontext
 import paths
 
 
@@ -61,11 +62,6 @@ def watch_directory(paths, callback):
         observer.schedule(CallbackEventHandler(callback=callback), path, recursive=True)
     observer.start()
     return observer
-
-
-def initialize_plugin(incontext):
-    incontext.add_command("watch", command_watch, help="watch for changes and automatically build the website")
-    incontext.add_command("serve", command_serve, help="serve a local copy of the site using a Docker nginx container")
 
 
 class Builder(threading.Thread):
@@ -104,27 +100,6 @@ class Builder(threading.Thread):
                     logging.error("Failed: %s", e)
 
 
-def command_watch(incontext, parser):
-    def do_watch(options):
-        builder = Builder(incontext)
-        builder.start()
-        logging.info("Watching directory...")
-        observer = watch_directory([incontext.configuration.site.paths.content,
-                                    incontext.configuration.site.paths.templates],
-                                   builder.schedule)
-        logging.info("Performing initial build...")
-        builder.schedule()
-        try:
-            while True:
-                time.sleep(0.2)
-        except KeyboardInterrupt:
-            builder.stop()
-            observer.stop()
-        observer.join()
-        builder.join()
-    return do_watch
-
-
 def docker(command):
     prefix = []
     if sys.platform == "linux":
@@ -132,15 +107,34 @@ def docker(command):
     return subprocess.run(prefix + ["docker"] + command)
 
 
+@incontext.command("watch", help="watch for changes and automatically build the website")
+def command_watch(incontext, options):
+    builder = Builder(incontext)
+    builder.start()
+    logging.info("Watching directory...")
+    observer = watch_directory([incontext.configuration.site.paths.content,
+                                incontext.configuration.site.paths.templates],
+                               builder.schedule)
+    logging.info("Performing initial build...")
+    builder.schedule()
+    try:
+        while True:
+            time.sleep(0.2)
+    except KeyboardInterrupt:
+        builder.stop()
+        observer.stop()
+    observer.join()
+    builder.join()
+
+
+@incontext.command("serve", help="serve a local copy of the site using a Docker nginx container")
 def command_serve(incontext, parser):
-    def do_serve(options):
-        container = "incontext-nginx"
-        docker(["rm", "--force", container])
-        docker(["run", "--name", container,
-                "--restart", "always",
-                "-d",
-                "-p", "80:80",
-                "-v", f"{incontext.configuration.site.destination.files_directory}:/usr/share/nginx/html",
-                "-v", f"{os.path.join(paths.ROOT_DIR, 'nginx.conf')}:/etc/nginx/conf.d/default.conf",
-                "nginx"])
-    return do_serve
+    container = "incontext-nginx"
+    docker(["rm", "--force", container])
+    docker(["run", "--name", container,
+            "--restart", "always",
+            "-d",
+            "-p", "80:80",
+            "-v", f"{incontext.configuration.site.destination.files_directory}:/usr/share/nginx/html",
+            "-v", f"{os.path.join(paths.ROOT_DIR, 'nginx.conf')}:/etc/nginx/conf.d/default.conf",
+            "nginx"])

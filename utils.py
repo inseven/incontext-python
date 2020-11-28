@@ -42,6 +42,21 @@ class Chdir(object):
 
     def __exit__(self, *args, **kwargs):
         os.chdir(self.pwd)
+        
+        
+class PropertyDictionary(object):
+
+    def __init__(self, dictionary):
+        self._dictionary = dictionary
+
+    def __getattr__(self, name):
+        return self._dictionary[name]
+
+    def keys(self):
+        return self._dictionary.keys()
+
+    def __getitem__(self, key):
+        return self._dictionary[key]
 
 
 class TempDir(object):
