@@ -40,6 +40,31 @@ logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO, format="[%
 sys.path.append(PLUGINS_DIRECTORY)
 
 
+CALLBACK_TYPE_SETUP = "setup"
+CALLBACK_TYPE_STANDALONE = "standalone"
+
+
+class _CommandPlugin(object):
+    
+    def __init__(self, name, help, callback, callback_type, arguments=[]):
+        self.name = name
+        self.help = help
+        self.callback = callback
+        self.callback_type = callback_type
+        self.arguments = arguments
+        
+    def configure(self, incontext, parser):
+        if self.callback_type == CALLBACK_TYPE_SETUP:
+            return self.callback(incontext, parser)
+        elif self.callback_type == CALLBACK_TYPE_STANDALONE:
+            for argument in self.arguments:
+                parser.add_argument(*(argument.args), **(argument.kwargs))
+            def callback(options):
+                return self.callback(incontext, options)
+            return callback
+        raise AssertionError("Unknown command callback type.")
+
+
 class CommandArgument(object):
     
     def __init__(self, *args, **kwargs):
@@ -105,21 +130,13 @@ def command(name, help=None, arguments=[]):
     Register a new command.
     """
     def decorator(f):
-        def add_command_callback(incontext, parser):
-            for argument in arguments:
-                parser.add_argument(*(argument.args), **(argument.kwargs))
-            def callback_wrapper(options):
-                return f(incontext, options)
-            return callback_wrapper
-        _PLUGINS.add_plugin(PLUGIN_TYPE_COMMAND, name, wrap_add_command(name, add_command_callback, help))
+        _PLUGINS.add_plugin(PLUGIN_TYPE_COMMAND, name, _CommandPlugin(name=name,
+                                                                      help=help,
+                                                                      callback=f,
+                                                                      callback_type=CALLBACK_TYPE_STANDALONE,
+                                                                      arguments=arguments))
         return f
     return decorator
-    
-    
-def wrap_add_command(name, f, help):
-    def add_command(incontext):
-        return incontext._add_command(name, f, help)
-    return add_command
 
 
 class Configuration(object):
@@ -156,7 +173,6 @@ class InContext(object):
         self.subparsers = []
         self.configuration_providers = {}
         self.configuration = Configuration()
-        self.commands = {}
         self.plugins = _PLUGINS
         """
         Returns the registered plugins stored in a `Plugins` instance.
@@ -219,15 +235,10 @@ class InContext(object):
         @param help: The help string that describes the command to be printed when the user passes the '--help' flag.
         @type help: str
         """
-        self.plugins.add_plugin(PLUGIN_TYPE_COMMAND, name, wrap_add_command(name, function, help))
-        
-    def _add_command(self, name, function, help):
-        parser = self.subparsers.add_parser(name, help=help)
-        fn = function(self, parser)
-        parser.set_defaults(fn=fn)
-        def command_runner(**kwargs):
-            fn(Namespace(**kwargs))
-        self.commands[name] = command_runner
+        self.plugins.add_plugin(PLUGIN_TYPE_COMMAND, name, _CommandPlugin(name=name,
+                                                                          help=help,
+                                                                          callback=function,
+                                                                          callback_type=CALLBACK_TYPE_SETUP))
 
     def add_configuration_provider(self, name, function):
         """
@@ -278,9 +289,15 @@ class InContext(object):
         Parse the command line arguments and execute the requested command.
         """
         
+        # TODO: Create the parser here.
+        
         # Prepare the commands for running.
-        for function in self.plugins.plugins(PLUGIN_TYPE_COMMAND).values():
-            function(self)
+        for command_plugin in self.plugins.plugins(PLUGIN_TYPE_COMMAND).values():
+            parser = self.subparsers.add_parser(command_plugin.name, help=help)
+            fn = command_plugin.configure(self, parser)
+            parser.set_defaults(fn=fn)
+            def command_runner(**kwargs):
+                fn(Namespace(**kwargs))
 
         # Parse the arguments.       
         options = self.parser.parse_args(args)
