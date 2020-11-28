@@ -21,6 +21,7 @@
 import subprocess
 
 import glob
+import logging
 import os
 
 import jinja2
@@ -62,13 +63,20 @@ def command_build_documentation(incontext, options):
         
         # Generate the Python documentation.
         for f in files:
+            logging.info("Generating documentation for '%s'...", f)
             output_directory = os.path.join(documentation_directory, os.path.dirname(f))
             utils.makedirs(output_directory)
-            subprocess.check_call(["pdoc", 
-                                   "--html",
-                                   "--output-dir", output_directory,
-                                   "--force",
-                                   f])
+            result = subprocess.run(["pdoc", 
+                                     "--html",
+                                     "--output-dir", output_directory,
+                                     "--force",
+                                     f],
+                                    capture_output=True)
+            logging.debug(result.stdout)
+            if result.returncode:
+                exit(result.stderr)
+            elif result.stderr:
+                logging.warning(result.stderr)
                               
         # Create an index page.
         with open(os.path.join(documentation_directory, "index.html"), "w") as fh:

@@ -20,6 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import datetime
 import os
 import sys
 import tempfile
@@ -46,7 +47,7 @@ class CommandsTestCase(unittest.TestCase):
                 "title": "Example Site",
                 "url": "https://example.com"
             },
-            "paths": [],
+            "paths": {},
             "build_steps": [
                 {
                     "task": "process_files",
@@ -68,3 +69,46 @@ class CommandsTestCase(unittest.TestCase):
             self.assertEqual(len(os.listdir(path)), 0)
             common.run_incontext(["build-documentation", path], plugins_directory=paths.PLUGINS_DIR)
             self.assertGreater(len(os.listdir(path)), 0)
+            
+    def test_add_draft_and_publish_with_build(self):
+        configuration = {
+            "config": {
+                "title": "Example Site",
+                "url": "https://example.com"
+            },
+            "paths": {
+                "drafts": "content/drafts",
+                "posts": "content/posts",
+            },
+            "build_steps": [
+                {
+                    "task": "process_files",
+                    "args": {
+                        "handlers": [
+                            {
+                                "when": "(.*/)?.*\.markdown",
+                                "then": "import_markdown",
+                            }
+                        ],
+                    }
+                },
+            ],
+        }
+        with common.TemporarySite(configuration=configuration) as site:
+            with open(os.path.join(site.path, "templates", "post.html"), "w") as fh:
+                fh.write("{{ page.title }}\n")
+            self.assertFalse(os.path.exists(os.path.join(site.path, "build")))
+            common.run_incontext(["add", "draft", "Cheese is wonderful"], plugins_directory=paths.PLUGINS_DIR)
+            self.assertTrue(os.path.exists(os.path.join(site.path, "content/drafts/cheese-is-wonderful/index.markdown")))
+            common.run_incontext(["build"], plugins_directory=paths.PLUGINS_DIR)
+            self.assertTrue(os.path.exists(os.path.join(site.path, "build/files/drafts/cheese-is-wonderful/index.html")))
+            common.run_incontext(["publish",
+                                  os.path.join(site.path, "content/drafts/cheese-is-wonderful")],
+                                 plugins_directory=paths.PLUGINS_DIR)
+            today = datetime.date.today().strftime("%Y-%m-%d")
+            # self.assertTrue(os.path.exists(os.path.join(site.path, f"content/posts/{today}-cheese-is-wonderful")))
+            self.assertTrue(os.path.isdir(os.path.join(site.path, f"content/posts/{today}-cheese-is-wonderful")))
+            self.assertTrue(os.path.exists(os.path.join(site.path, f"content/posts/{today}-cheese-is-wonderful/index.markdown")))
+            common.run_incontext(["build"], plugins_directory=paths.PLUGINS_DIR)
+            self.assertFalse(os.path.exists(os.path.join(site.path, "build/files/drafts/cheese-is-wonderful/index.html")))
+            # self.assertTrue(os.path.exists(os.path.join(site.path, f"build/files/posts/{today}-cheese-is-wonderful/index.html")))
