@@ -106,9 +106,8 @@ class CommandsTestCase(unittest.TestCase):
                                   os.path.join(site.path, "content/drafts/cheese-is-wonderful")],
                                  plugins_directory=paths.PLUGINS_DIR)
             today = datetime.date.today().strftime("%Y-%m-%d")
-            # self.assertTrue(os.path.exists(os.path.join(site.path, f"content/posts/{today}-cheese-is-wonderful")))
             self.assertTrue(os.path.isdir(os.path.join(site.path, f"content/posts/{today}-cheese-is-wonderful")))
             self.assertTrue(os.path.exists(os.path.join(site.path, f"content/posts/{today}-cheese-is-wonderful/index.markdown")))
             common.run_incontext(["build"], plugins_directory=paths.PLUGINS_DIR)
             self.assertFalse(os.path.exists(os.path.join(site.path, "build/files/drafts/cheese-is-wonderful/index.html")))
-            # self.assertTrue(os.path.exists(os.path.join(site.path, f"build/files/posts/{today}-cheese-is-wonderful/index.html")))
+            self.assertTrue(os.path.exists(os.path.join(site.path, f"build/files/posts/{today}-cheese-is-wonderful/index.html")))

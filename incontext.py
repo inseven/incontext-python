@@ -65,22 +65,22 @@ class _CommandPlugin(object):
         raise AssertionError("Unknown command callback type.")
 
 
-class CommandArgument(object):
+class Argument(object):
     
     def __init__(self, *args, **kwargs):
         self.args = args
         self.kwargs = kwargs
 
 
-class Plugins(object):
+class _Plugins(object):
     """
     Centralised mechanism for storing references to plugins by type.
     
     InContext allows for plugins to be registered either module-wide (via to `incontext` decorators), or by providing
     an implementation of the `initialize_plugin` function and registering plugins directly with the `InContext`
-    instance passed in. In both of these situations, registered plugins are stored in an instance of the `Plugins` class.
+    instance passed in. In both of these situations, registered plugins are stored in an instance of the `_Plugins` class.
     
-    Instances of the `incontext` have a module-scoped instance of `Plugins` (`incontext._PLUGINS`) which is added to the
+    Instances of the `incontext` have a module-scoped instance of `_Plugins` (`incontext._PLUGINS`) which is added to the
     runtime instance using the `extend` method when plugins are loaded.
     """
     
@@ -98,14 +98,14 @@ class Plugins(object):
         
     def extend(self, plugins):
         """
-        Add all of the plugins in `plugins` (type `Plugins`) to the current instance.
+        Add all of the plugins in `plugins` (type `_Plugins`) to the current instance.
         """
         for plugin_type, plugin_plugins in plugins._plugins_by_type.items():
             for name, plugin in plugin_plugins.items():
                 self.add_plugin(plugin_type, name, plugin)
                 
                 
-_PLUGINS = Plugins()
+_PLUGINS = _Plugins()
 """
 Module-scoped plugin instances (used with decorator-based plugin registration).
 
@@ -175,7 +175,7 @@ class InContext(object):
         self.configuration = Configuration()
         self.plugins = _PLUGINS
         """
-        Returns the registered plugins stored in a `Plugins` instance.
+        Returns the registered plugins stored in a `_Plugins` instance.
         """
 
         # Load the plugins.
@@ -288,8 +288,6 @@ class InContext(object):
         """
         Parse the command line arguments and execute the requested command.
         """
-        
-        # TODO: Create the parser here.
         
         # Prepare the commands for running.
         for command_plugin in self.plugins.plugins(PLUGIN_TYPE_COMMAND).values():

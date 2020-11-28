@@ -95,7 +95,7 @@ class SiteConfiguration(object):
             "templates": "templates",
         }
         paths.update(self._config["paths"])
-        # TODO: Ensure the paths are under the root.
+        # TODO: Ensure the paths in site.yaml are under the root (https://github.com/inseven/incontext/issues/60)
         return utils.PropertyDictionary({name: os.path.join(self._root, os.path.expanduser(path))
                                          for name, path in paths.items()})
 

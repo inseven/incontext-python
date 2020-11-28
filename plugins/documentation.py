@@ -50,7 +50,7 @@ INDEX_TEMPLATE = """
 
 @incontext.command("build-documentation", help="Build the documentation.",
                    arguments=[
-                       incontext.CommandArgument("output", help="output directory"),
+                       incontext.Argument("output", help="output directory"),
                    ])
 def command_build_documentation(incontext, options):
     documentation_directory = os.path.abspath(options.output)
