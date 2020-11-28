@@ -28,17 +28,13 @@ import logging
 import os
 import sys
 
-SCRIPT_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
-PLUGINS_DIRECTORY = os.path.join(SCRIPT_DIRECTORY, "plugins")
-
-PLUGIN_TYPE_CONTEXT_FUNCTION = "context_function"
-PLUGIN_TYPE_COMMAND = "command"
+import paths
 
 verbose = '--verbose' in sys.argv[1:] or '-v' in sys.argv[1:]
 logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO, format="[%(levelname)s] %(message)s")
 
-sys.path.append(PLUGINS_DIRECTORY)
-
+PLUGIN_TYPE_CONTEXT_FUNCTION = "context_function"
+PLUGIN_TYPE_COMMAND = "command"
 
 CALLBACK_TYPE_SETUP = "setup"
 CALLBACK_TYPE_STANDALONE = "standalone"
@@ -179,6 +175,7 @@ class InContext(object):
         """
 
         # Load the plugins.
+        sys.path.append(self.plugins_directory)
         plugins = {}
         for plugin in glob.glob(os.path.join(self.plugins_directory, "*.py")):
             identifier = os.path.splitext(os.path.relpath(plugin, self.plugins_directory))[0].replace('/', '_')
@@ -311,7 +308,7 @@ def main():
     """
     Entry-point for the command line. Should not be called directly.
     """
-    instance = InContext(plugins_directory=PLUGINS_DIRECTORY)
+    instance = InContext(plugins_directory=paths.PLUGINS_DIR)
     instance.run(sys.argv[1:])
 
 
