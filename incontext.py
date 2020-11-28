@@ -29,6 +29,7 @@ import os
 import sys
 
 import paths
+import utils
 
 verbose = '--verbose' in sys.argv[1:] or '-v' in sys.argv[1:]
 logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO, format="[%(levelname)s] %(message)s")
@@ -177,9 +178,12 @@ class InContext(object):
         # Load the plugins.
         sys.path.append(self.plugins_directory)
         plugins = {}
-        for plugin in glob.glob(os.path.join(self.plugins_directory, "*.py")):
-            identifier = os.path.splitext(os.path.relpath(plugin, self.plugins_directory))[0].replace('/', '_')
-            plugins[identifier] = importlib.import_module(identifier, plugin)
+        for plugin in utils.find_files(self.plugins_directory, [".py"]):
+            plugin = os.path.join(*plugin)
+            (module, _) = os.path.splitext(os.path.relpath(plugin, self.plugins_directory))
+            module = module.replace("/", ".")
+            logging.debug("Importing '%s'...", module)
+            plugins[module] = importlib.import_module(module)
 
         # Create the argument parser.
         self.parser = argparse.ArgumentParser(prog="incontext", description="Generate website.")
@@ -281,14 +285,14 @@ class InContext(object):
         """
         return self.handlers[name]
 
-    def run(self, args):
+    def run(self, args=None):
         """
         Parse the command line arguments and execute the requested command.
         """
         
         # Prepare the commands for running.
         for command_plugin in self.plugins.plugins(PLUGIN_TYPE_COMMAND).values():
-            parser = self.subparsers.add_parser(command_plugin.name, help=help)
+            parser = self.subparsers.add_parser(command_plugin.name, help=command_plugin.help)
             fn = command_plugin.configure(self, parser)
             parser.set_defaults(fn=fn)
             def command_runner(**kwargs):
