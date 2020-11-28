@@ -32,7 +32,7 @@ import fnmatch
 import yaml
 
 import converters
-import gallery
+import handlers.gallery as gallery
 import incontext
 import paths
 import store

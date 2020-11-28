@@ -27,7 +27,7 @@ import re
 import shutil
 import subprocess
 
-import gallery
+import handlers.gallery as gallery
 import paths
 import utils
 
