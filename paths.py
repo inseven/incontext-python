@@ -20,8 +20,7 @@
 
 import os.path
 
-SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = os.path.dirname(SCRIPTS_DIR)
-TESTS_DIR = os.path.join(SCRIPTS_DIR, "tests")
-SERVICE_DIR = os.path.join(SCRIPTS_DIR, "service")
-PLUGINS_DIR = os.path.join(SCRIPTS_DIR, "plugins")
+INCONTEXT_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
+TESTS_DIR = os.path.join(INCONTEXT_DIRECTORY, "tests")
+SERVICE_DIR = os.path.join(INCONTEXT_DIRECTORY, "service")
+PLUGINS_DIR = os.path.join(INCONTEXT_DIRECTORY, "plugins")

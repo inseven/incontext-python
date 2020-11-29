@@ -55,12 +55,12 @@ INDEX_TEMPLATE = """
 def command_build_documentation(incontext, options):
     documentation_directory = os.path.abspath(options.output)
 
-    with utils.Chdir(paths.SCRIPTS_DIR):
+    with utils.Chdir(paths.INCONTEXT_DIRECTORY):
 
         # Look up the python files to document.
-        files = utils.find(paths.SCRIPTS_DIR,
+        files = utils.find(paths.INCONTEXT_DIRECTORY,
                            extensions=[".py"],
-                           transform=lambda x: os.path.relpath(x, paths.SCRIPTS_DIR))
+                           transform=lambda x: os.path.relpath(x, paths.INCONTEXT_DIRECTORY))
         modules = [os.path.splitext(f)[0] for f in files]
 
         # Generate the Python documentation.
