@@ -19,29 +19,14 @@
 # SOFTWARE.
 
 import functools
-import os
-import shutil
-import utils
 
 
 def initialize_plugin(incontext):
     incontext.add_handler("ignore", ignore)
-    incontext.add_handler("copy_file", copy_file)
 
 
 def ignore(incontext, from_directory, to_directory):
     @functools.wraps(ignore)
     def inner(path):
         return {'files': []}
-    return inner
-
-
-def copy_file(incontext, from_directory, to_directory):
-    @functools.wraps(copy_file)
-    def inner(path):
-        root, dirname, basename = utils.tripple(from_directory, path)
-        destination = os.path.join(to_directory, dirname, basename)
-        utils.makedirs(os.path.join(to_directory, dirname))
-        shutil.copy(path, destination)
-        return {'files': [destination]}
     return inner
