@@ -99,7 +99,7 @@ class RegexMatcher(object):
 
     def matches(self, path):
         """
-        Check if `path` matches any of the patterns.
+        `True` if `path` matches any of the regular expression patterns; `False` otherwise.
         """
         for expression in self.expressions:
             if expression.search(path):
