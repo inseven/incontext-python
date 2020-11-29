@@ -49,17 +49,23 @@ class _CommandPlugin(object):
         self.callback = callback
         self.callback_type = callback_type
         self.arguments = arguments
+        self._runner = None
         
     def configure(self, incontext, parser):
         if self.callback_type == CALLBACK_TYPE_SETUP:
-            return self.callback(incontext, parser)
+            self._runner = self.callback(incontext, parser)
+            return self._runner
         elif self.callback_type == CALLBACK_TYPE_STANDALONE:
             for argument in self.arguments:
                 parser.add_argument(*(argument.args), **(argument.kwargs))
             def callback(options):
                 return self.callback(incontext, options)
+            self._runner = callback
             return callback
         raise AssertionError("Unknown command callback type.")
+        
+    def run(self, **kwargs):
+        return self._runner(Namespace(**kwargs))
 
 
 class Argument(object):
@@ -206,6 +212,10 @@ class InContext(object):
                 self.plugins.extend(plugin_instance.incontext._PLUGINS)
                 
     @property
+    def commands(self):
+        return self.plugins.plugins(PLUGIN_TYPE_COMMAND)
+                
+    @property
     def context_functions(self):
         """
         Return a dictionary of additional context functions that will be available to the Jinja templating at render time.
@@ -295,8 +305,6 @@ class InContext(object):
             parser = self.subparsers.add_parser(command_plugin.name, help=command_plugin.help)
             fn = command_plugin.configure(self, parser)
             parser.set_defaults(fn=fn)
-            def command_runner(**kwargs):
-                fn(Namespace(**kwargs))
 
         # Parse the arguments.       
         options = self.parser.parse_args(args)

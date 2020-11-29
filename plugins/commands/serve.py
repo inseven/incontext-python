@@ -94,7 +94,7 @@ class Builder(threading.Thread):
                 self.scheduled = False
             if scheduled:
                 try:
-                    self.incontext.commands["build"]()
+                    self.incontext.commands["build"].run()
                     logging.info("Done.")
                 except Exception as e:
                     logging.error("Failed: %s", e)
