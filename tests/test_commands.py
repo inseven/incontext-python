@@ -66,9 +66,9 @@ class CommandsTestCase(unittest.TestCase):
 
     def test_build_documentation(self):
         with tempfile.TemporaryDirectory() as path:
-            self.assertEqual(len(os.listdir(path)), 0)
+            self.assertEqual(len(utils.find(path)), 0)
             common.run_incontext(["build-documentation", path], plugins_directory=paths.PLUGINS_DIR)
-            self.assertGreater(len(os.listdir(path)), 0)
+            self.assertEqual(len(utils.find(path)), 24)
 
     def test_add_draft_and_publish_with_build(self):
         configuration = {

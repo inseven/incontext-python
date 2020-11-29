@@ -145,6 +145,24 @@ def find_files(path, types=None):
     return result
 
 
+def find(path, extensions=None, transform=None):
+    """
+    Find the files in `path` with file extensions matching `extensions`.
+
+    `extensions` should be given as an array of file extensions.
+
+    For example,
+
+    ```
+    texts = find("~/", [".txt"])
+    ```
+    """
+    paths = [os.path.join(*tripple) for tripple in find_files(path, types=extensions)]
+    if transform:
+        paths = [transform(path) for path in paths]
+    return paths
+
+
 def makedirs(path):
     """
     Ensure a directory exists at `path`, recursively creating all intermediate directories if necessary.

@@ -54,30 +54,35 @@ INDEX_TEMPLATE = """
                    ])
 def command_build_documentation(incontext, options):
     documentation_directory = os.path.abspath(options.output)
-    
+
     with utils.Chdir(paths.SCRIPTS_DIR):
-        
+
         # Look up the python files to document.
-        files = glob.glob("*.py") + glob.glob("plugins/*.py")
+        files = utils.find(paths.SCRIPTS_DIR,
+                           extensions=[".py"],
+                           transform=lambda x: os.path.relpath(x, paths.SCRIPTS_DIR))
         modules = [os.path.splitext(f)[0] for f in files]
-        
+
         # Generate the Python documentation.
         for f in files:
             logging.info("Generating documentation for '%s'...", f)
             output_directory = os.path.join(documentation_directory, os.path.dirname(f))
             utils.makedirs(output_directory)
-            result = subprocess.run(["pdoc", 
+            environment = dict(os.environ)
+            environment["PYTHONPATH"] = paths.PLUGINS_DIR
+            result = subprocess.run(["pdoc",
                                      "--html",
                                      "--output-dir", output_directory,
                                      "--force",
                                      f],
-                                    capture_output=True)
+                                    capture_output=True,
+                                    env=environment)
             logging.debug(result.stdout)
             if result.returncode:
                 exit(result.stderr)
             elif result.stderr:
                 logging.warning(result.stderr)
-                              
+
         # Create an index page.
         with open(os.path.join(documentation_directory, "index.html"), "w") as fh:
             template = jinja2.Template(INDEX_TEMPLATE)
