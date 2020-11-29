@@ -21,7 +21,6 @@
 # SOFTWARE.
 
 import os
-import pathlib
 import sys
 import tempfile
 
@@ -36,52 +35,52 @@ class TemporarySite(object):
     """
     Context handler which creates a temporary site for testing.
     """
-    
+
     def __init__(self, testcase, configuration):
         self.testcase = testcase
         self.configuration = configuration
-        
+
     @property
     def path(self):
         return self.temporary_directory.name
-    
+
     def __enter__(self):
         self.pwd = os.getcwd()
         self.temporary_directory = tempfile.TemporaryDirectory()
-        
+
         # Create the configuration file.
         with open(os.path.join(self.temporary_directory.name, "site.yaml"), "w") as fh:
             yaml.dump(self.configuration, fh)
-        
+
         # Create the required directories.
         utils.makedirs(os.path.join(self.temporary_directory.name, "content"))
         utils.makedirs(os.path.join(self.temporary_directory.name, "templates"))
-            
+
         os.chdir(self.temporary_directory.name)
         return self
-        
+
     def __exit__(self, exc_type, exc_value, traceback):
         os.chdir(self.pwd)
         self.temporary_directory.cleanup()
-        
+
     def run(self, args):
         run_incontext(args, plugins_directory=paths.PLUGINS_DIR)
-        
+
     def build(self):
         self.run(["build"])
 
     def clean(self):
         self.run(["clean"])
-        
+
     def touch(self, path):
-        pathlib.Path(os.path.join(self.temporary_directory.name, path)).touch()
-    
+        utils.touch(os.path.join(self.temporary_directory.name, path))
+
     def assertExists(self, path):
         self.testcase.assertTrue(os.path.exists(os.path.join(self.path, path)))
-        
+
     def assertNotExists(self, path):
         self.testcase.assertFalse(os.path.exists(os.path.join(self.path, path)))
-        
+
     def assertIsDir(self, path):
         self.testcase.assertTrue(os.path.isdir(os.path.join(self.path, path)))
 

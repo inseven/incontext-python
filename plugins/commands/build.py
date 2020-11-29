@@ -109,11 +109,6 @@ class SiteConfiguration(object):
         })
 
 
-def touch(path):
-    with open(path, 'a'):
-        os.utime(path)
-
-
 def configuration_provider_site(incontext, options):
     overrides = {}
 
@@ -186,7 +181,7 @@ def process_files(incontext, options, handlers):
     render_change_tracker.commit(cleanup(root=incontext.configuration.site.destination.root_directory,
                                          document_store=document_store))
 
-    touch(incontext.configuration.site.destination.store_path)
+    utils.touch(incontext.configuration.site.destination.store_path)
 
 
 class Website(object):

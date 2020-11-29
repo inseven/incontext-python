@@ -20,6 +20,7 @@
 
 import hashlib
 import os
+import pathlib
 import re
 import shutil
 import struct
@@ -109,6 +110,10 @@ class RegexMatcher(object):
 def tripple(root, path):
     dirname, basename = os.path.split(os.path.relpath(path, root))
     return (root, dirname, basename)
+
+
+def touch(path):
+    pathlib.Path(path).touch()
 
 
 def hash_items(items):
