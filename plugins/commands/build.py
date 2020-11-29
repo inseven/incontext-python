@@ -145,10 +145,16 @@ def process_files(incontext, options, handlers):
     for task in handlers:
         fn = incontext.get_handler(task["then"])
         args = task["args"] if "args" in task else {}
-        phase1.add_task(task['when'], fn(incontext,
-                                         from_directory=incontext.configuration.site.paths.content,
-                                         to_directory=incontext.configuration.site.destination.files_directory,
-                                         **args))
+        when = task["when"]
+        if isinstance(when, str):
+            matcher = RegexMatcher([when])
+        elif isinstance(when, list):
+            matcher = RegexMatcher(when)
+        phase1.add_task(matcher,
+                        fn(incontext,
+                           from_directory=incontext.configuration.site.paths.content,
+                           to_directory=incontext.configuration.site.destination.files_directory,
+                           **args))
     phase1.process()
 
     # Renders are dependent on the templates, so we hash all the templates and add this into the hash for the page
@@ -307,8 +313,8 @@ class Phase(object):
         self.tasks = []
         self.tracker = tracker.ChangeTracker(self.cache)
 
-    def add_task(self, pattern, task):
-        self.tasks.append((pattern, task))
+    def add_task(self, matcher, task):
+        self.tasks.append((matcher, task))
 
     @property
     def paths(self):
@@ -317,8 +323,8 @@ class Phase(object):
     def process(self):
         for root, dirname, basename in utils.find_files(self.root):
             relpath = os.path.join(dirname, basename)
-            for pattern, task in self.tasks:
-                if re.search("^%s$" % pattern, relpath, re.IGNORECASE):
+            for matcher, task in self.tasks:
+                if matcher.matches(relpath):
                     def debug_task(task, relpath):
                         @functools.wraps(task)
                         def inner(path):

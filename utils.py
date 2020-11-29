@@ -42,8 +42,8 @@ class Chdir(object):
 
     def __exit__(self, *args, **kwargs):
         os.chdir(self.pwd)
-        
-        
+
+
 class PropertyDictionary(object):
 
     def __init__(self, dictionary):
@@ -75,14 +75,35 @@ class TempDir(object):
 class FrontmatterDocument(object):
     """
     Convenience class for working with Front Matter and Markdown.
-    
-    The frontmatter module expects a named tuple with `content` and `metadata` properties when serialising Front Matter and Markdown. This class provides
-    a lightweight solution.
+
+    The frontmatter module expects a named tuple with `content` and `metadata` properties when serialising Front Matter
+    and Markdown. This class provides a lightweight solution.
     """
 
     def __init__(self, content="", metadata=None):
         self.content = content
         self.metadata = metadata
+
+
+class RegexMatcher(object):
+    """
+    Utility for encapsulating a collection of regular expressions and check paths against them.
+    """
+
+    def __init__(self, patterns):
+        """
+        Create a new matcher with a list of regular expression patterns, `patterns`, to match against.
+        """
+        self.expressions = [re.compile("^%s$" % pattern, re.IGNORECASE) for pattern in patterns]
+
+    def matches(self, path):
+        """
+        Check if `path` matches any of the patterns.
+        """
+        for expression in self.expressions:
+            if expression.search(path):
+                return True
+        return False
 
 
 def tripple(root, path):
@@ -122,9 +143,9 @@ def find_files(path, types=None):
 def makedirs(path):
     """
     Ensure a directory exists at `path`, recursively creating all intermediate directories if necessary.
-    
+
     Unlike `os.makedirs`, this does not raise an exception if the directory already exists.
-    
+
     N.B. This will not raise an exception if the path exists, but is not a directory.
     """
     if not os.path.isdir(path):
