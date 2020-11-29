@@ -20,28 +20,23 @@
 
 import functools
 import os
-import shutil
 import utils
 
 
 def initialize_plugin(incontext):
-    incontext.add_handler("ignore", ignore)
-    incontext.add_handler("copy_file", copy_file)
+    incontext.add_handler("preprocess_stylesheet", preprocess_stylesheet)
 
 
-def ignore(incontext, from_directory, to_directory):
-    @functools.wraps(ignore)
-    def inner(path):
-        return {'files': []}
-    return inner
-
-
-def copy_file(incontext, from_directory, to_directory):
-    @functools.wraps(copy_file)
-    def inner(path):
-        root, dirname, basename = utils.tripple(from_directory, path)
-        destination = os.path.join(to_directory, dirname, basename)
-        utils.makedirs(os.path.join(to_directory, dirname))
-        shutil.copy(path, destination)
+def preprocess_stylesheet(incontext, from_directory, to_directory, path=None):
+    @functools.wraps(preprocess_stylesheet)
+    def inner(source):
+        if path is not None:
+            source = path
+        root, dirname, basename = utils.tripple(from_directory, source)
+        destination = os.path.join(to_directory, dirname, os.path.splitext(basename)[0] + ".css")
+        if path is not None:
+            destination = os.path.join(to_directory, os.path.splitext(path)[0] + ".css")
+        utils.makedirs(os.path.dirname(destination))
+        utils.sass(os.path.join(from_directory, source), destination)
         return {'files': [destination]}
     return inner
