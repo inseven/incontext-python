@@ -23,7 +23,7 @@ import os
 import subprocess
 
 import converters
-import gallery
+import handlers.gallery as gallery
 import store
 import utils
 
