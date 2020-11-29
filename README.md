@@ -26,9 +26,9 @@ Most existing static site generators do a great job with text content, but treat
 incontext build
 ```
 
-## Frontmatter
+## Front Matter
 
-InContext has a few special Frontmatter properties.
+InContext has a few special Front Matter properties.
 
 ### Include
 
