@@ -32,7 +32,7 @@ import utils
 
 
 class PluginsTestCase(unittest.TestCase):
-    
+
     def test_expected_plugins(self):
         instance = incontext.InContext(plugins_directory=paths.PLUGINS_DIR)
         self.assertIsInstance(instance.plugins, incontext._Plugins)
@@ -43,7 +43,6 @@ class PluginsTestCase(unittest.TestCase):
                                  "build-documentation",
                                  "clean",
                                  "publish",
-                                 "serve",
                                  "tests",
                                  "watch",
                              })

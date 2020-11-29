@@ -28,5 +28,5 @@ import paths
 @incontext.command("tests", help="Run the tests")
 def command_tests(incontext, options):
     environment = dict(os.environ)
-    environment["PYTHONPATH"] = paths.SCRIPTS_DIR
+    environment["PYTHONPATH"] = paths.INCONTEXT_DIRECTORY
     subprocess.check_call(["nosetests", "-v", paths.TESTS_DIR], env=environment)

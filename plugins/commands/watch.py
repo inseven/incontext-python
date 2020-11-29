@@ -125,16 +125,3 @@ def command_watch(incontext, options):
         observer.stop()
     observer.join()
     builder.join()
-
-
-@incontext.command("serve", help="serve a local copy of the site using a Docker nginx container")
-def command_serve(incontext, parser):
-    container = "incontext-nginx"
-    docker(["rm", "--force", container])
-    docker(["run", "--name", container,
-            "--restart", "always",
-            "-d",
-            "-p", "80:80",
-            "-v", f"{incontext.configuration.site.destination.files_directory}:/usr/share/nginx/html",
-            "-v", f"{os.path.join(paths.ROOT_DIR, 'nginx.conf')}:/etc/nginx/conf.d/default.conf",
-            "nginx"])
