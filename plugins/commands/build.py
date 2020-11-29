@@ -57,7 +57,7 @@ class SiteConfiguration(object):
         self._root = os.path.dirname(self._path)
         self._overrides = overrides
         self._loaded = False
-            
+
     def _load_configuration(self):
         if self._loaded:
             return
@@ -147,9 +147,9 @@ def process_files(incontext, options, handlers):
         args = task["args"] if "args" in task else {}
         when = task["when"]
         if isinstance(when, str):
-            matcher = RegexMatcher([when])
+            matcher = utils.RegexMatcher([when])
         elif isinstance(when, list):
-            matcher = RegexMatcher(when)
+            matcher = utils.RegexMatcher(when)
         phase1.add_task(matcher,
                         fn(incontext,
                            from_directory=incontext.configuration.site.paths.content,
