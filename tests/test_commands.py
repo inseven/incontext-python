@@ -68,7 +68,7 @@ class CommandsTestCase(unittest.TestCase):
         with tempfile.TemporaryDirectory() as path:
             self.assertEqual(len(utils.find(path)), 0)
             common.run_incontext(["build-documentation", path], plugins_directory=paths.PLUGINS_DIR)
-            self.assertEqual(len(utils.find(path)), 24)
+            self.assertEqual(len(utils.find(path)), 25)
 
     def test_add_draft_and_publish_with_build(self):
         configuration = {
@@ -171,3 +171,37 @@ class CommandsTestCase(unittest.TestCase):
             site.assertExists("build/files/foo.txt")
             site.assertExists("build/files/image.jpeg")
             site.assertNotExists("build/files/example.markdown")
+
+    def test_ignore(self):
+        configuration = {
+            "config": {
+                "title": "Example Site",
+                "url": "https://example.com"
+            },
+            "paths": {},
+            "build_steps": [
+                {
+                    "task": "process_files",
+                    "args": {
+                        "handlers": [
+                            {
+                                "when": [
+                                    ".*\.txt",
+                                ],
+                                "then": "ignore",
+                            },
+                            {
+                                "when": [
+                                    ".*\.txt",
+                                ],
+                                "then": "copy_file",
+                            }
+                        ],
+                    }
+                },
+            ],
+        }
+        with common.TemporarySite(self, configuration=configuration) as site:
+            site.touch("content/foo.txt")
+            site.build()
+            site.assertNotExists("build/files/foo.txt")
