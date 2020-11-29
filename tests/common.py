@@ -21,12 +21,14 @@
 # SOFTWARE.
 
 import os
+import pathlib
 import sys
 import tempfile
 
 import yaml
 
 import incontext
+import paths
 import utils
 
 
@@ -35,7 +37,8 @@ class TemporarySite(object):
     Context handler which creates a temporary site for testing.
     """
     
-    def __init__(self, configuration):
+    def __init__(self, testcase, configuration):
+        self.testcase = testcase
         self.configuration = configuration
         
     @property
@@ -60,6 +63,27 @@ class TemporarySite(object):
     def __exit__(self, exc_type, exc_value, traceback):
         os.chdir(self.pwd)
         self.temporary_directory.cleanup()
+        
+    def run(self, args):
+        run_incontext(args, plugins_directory=paths.PLUGINS_DIR)
+        
+    def build(self):
+        self.run(["build"])
+
+    def clean(self):
+        self.run(["clean"])
+        
+    def touch(self, path):
+        pathlib.Path(os.path.join(self.temporary_directory.name, path)).touch()
+    
+    def assertExists(self, path):
+        self.testcase.assertTrue(os.path.exists(os.path.join(self.path, path)))
+        
+    def assertNotExists(self, path):
+        self.testcase.assertFalse(os.path.exists(os.path.join(self.path, path)))
+        
+    def assertIsDir(self, path):
+        self.testcase.assertTrue(os.path.isdir(os.path.join(self.path, path)))
 
 
 def run_incontext(args, plugins_directory=None):

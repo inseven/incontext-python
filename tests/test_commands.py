@@ -33,9 +33,9 @@ import utils
 
 
 class CommandsTestCase(unittest.TestCase):
-    
+        
     def test_create_test_site(self):
-        with common.TemporarySite(configuration={}) as site:
+        with common.TemporarySite(self, configuration={}) as site:
             self.assertIsNotNone(site.path)
             self.assertTrue(os.path.exists(os.path.join(site.path, "site.yaml")))
             self.assertTrue(os.path.isdir(os.path.join(site.path, "content")))
@@ -57,12 +57,12 @@ class CommandsTestCase(unittest.TestCase):
                 },
             ],
         }
-        with common.TemporarySite(configuration=configuration) as site:
-            self.assertFalse(os.path.exists(os.path.join(site.path, "build")))
-            common.run_incontext(["build"], plugins_directory=paths.PLUGINS_DIR)
-            self.assertTrue(os.path.isdir(os.path.join(site.path, "build")))
-            common.run_incontext(["clean"], plugins_directory=paths.PLUGINS_DIR)
-            self.assertFalse(os.path.exists(os.path.join(site.path, "build")))
+        with common.TemporarySite(self, configuration=configuration) as site:
+            site.assertNotExists("build")
+            site.build()
+            site.assertIsDir("build")
+            site.clean()
+            site.assertNotExists("build")
 
     def test_build_documentation(self):
         with tempfile.TemporaryDirectory() as path:
@@ -94,20 +94,46 @@ class CommandsTestCase(unittest.TestCase):
                 },
             ],
         }
-        with common.TemporarySite(configuration=configuration) as site:
+        with common.TemporarySite(self, configuration=configuration) as site:
             with open(os.path.join(site.path, "templates", "post.html"), "w") as fh:
                 fh.write("{{ page.title }}\n")
-            self.assertFalse(os.path.exists(os.path.join(site.path, "build")))
-            common.run_incontext(["add", "draft", "Cheese is wonderful"], plugins_directory=paths.PLUGINS_DIR)
-            self.assertTrue(os.path.exists(os.path.join(site.path, "content/drafts/cheese-is-wonderful/index.markdown")))
-            common.run_incontext(["build"], plugins_directory=paths.PLUGINS_DIR)
+            site.assertNotExists("build")
+            site.run(["add", "draft", "Cheese is wonderful"])
+            site.assertExists("content/drafts/cheese-is-wonderful/index.markdown")
+            site.build()
             self.assertTrue(os.path.exists(os.path.join(site.path, "build/files/drafts/cheese-is-wonderful/index.html")))
-            common.run_incontext(["publish",
-                                  os.path.join(site.path, "content/drafts/cheese-is-wonderful")],
-                                 plugins_directory=paths.PLUGINS_DIR)
+            site.run(["publish",
+                      os.path.join(site.path, "content/drafts/cheese-is-wonderful")])
             today = datetime.date.today().strftime("%Y-%m-%d")
-            self.assertTrue(os.path.isdir(os.path.join(site.path, f"content/posts/{today}-cheese-is-wonderful")))
-            self.assertTrue(os.path.exists(os.path.join(site.path, f"content/posts/{today}-cheese-is-wonderful/index.markdown")))
-            common.run_incontext(["build"], plugins_directory=paths.PLUGINS_DIR)
-            self.assertFalse(os.path.exists(os.path.join(site.path, "build/files/drafts/cheese-is-wonderful/index.html")))
-            self.assertTrue(os.path.exists(os.path.join(site.path, f"build/files/posts/{today}-cheese-is-wonderful/index.html")))
+            site.assertIsDir(f"content/posts/{today}-cheese-is-wonderful")
+            site.assertExists(f"content/posts/{today}-cheese-is-wonderful/index.markdown")
+            site.build()
+            site.assertNotExists("build/files/drafts/cheese-is-wonderful/index.html")
+            site.assertExists(f"build/files/posts/{today}-cheese-is-wonderful/index.html")
+            
+    def test_copy_file_regex_syntax(self):
+        configuration = {
+            "config": {
+                "title": "Example Site",
+                "url": "https://example.com"
+            },
+            "paths": {},
+            "build_steps": [
+                {
+                    "task": "process_files",
+                    "args": {
+                        "handlers": [
+                            {
+                                "when": "(.*/)?.*\.txt",
+                                "then": "copy_file",
+                            }
+                        ],
+                    }
+                },
+            ],
+        }
+        with common.TemporarySite(self, configuration=configuration) as site:
+            site.touch("content/foo.txt")
+            site.assertExists("content/foo.txt")
+            site.build()
+            site.assertExists("build/files/foo.txt")
