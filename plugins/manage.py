@@ -176,7 +176,7 @@ CONTENT_TYPES = {
 def command_add(incontext, parser):
     subparsers = parser.add_subparsers(title="content type", required=True)
     for content_type, function in CONTENT_TYPES.items():
-        parser = subparsers.add_parser(content_type, help=help)
+        parser = subparsers.add_parser(content_type)
         parser.set_defaults(add_function=function(incontext, parser))
 
     def add(options):

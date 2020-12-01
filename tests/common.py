@@ -20,6 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import functools
 import os
 import sys
 import tempfile
@@ -31,40 +32,15 @@ import paths
 import utils
 
 
-class TemporarySite(object):
-    """
-    Context handler which creates a temporary site for testing.
-    """
+class Site(object):
 
-    def __init__(self, testcase, configuration):
+    def __init__(self, testcase, path):
         self.testcase = testcase
-        self.configuration = configuration
-
-    @property
-    def path(self):
-        return self.temporary_directory.name
-
-    def __enter__(self):
-        self.pwd = os.getcwd()
-        self.temporary_directory = tempfile.TemporaryDirectory()
-
-        # Create the configuration file.
-        with open(os.path.join(self.temporary_directory.name, "site.yaml"), "w") as fh:
-            yaml.dump(self.configuration, fh)
-
-        # Create the required directories.
-        utils.makedirs(os.path.join(self.temporary_directory.name, "content"))
-        utils.makedirs(os.path.join(self.temporary_directory.name, "templates"))
-
-        os.chdir(self.temporary_directory.name)
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        os.chdir(self.pwd)
-        self.temporary_directory.cleanup()
+        self.path = os.path.abspath(path)
 
     def run(self, args):
-        run_incontext(args, plugins_directory=paths.PLUGINS_DIR)
+        with utils.Chdir(self.path):
+            run_incontext(args, plugins_directory=paths.PLUGINS_DIR)
 
     def build(self):
         self.run(["build"])
@@ -83,6 +59,44 @@ class TemporarySite(object):
 
     def assertIsDir(self, path):
         self.testcase.assertTrue(os.path.isdir(os.path.join(self.path, path)))
+
+
+def with_temporary_directory(f):
+    @functools.wraps(f)
+    def inner(*args, **kwargs):
+        with tempfile.TemporaryDirectory() as path, utils.Chdir(path):
+                return f(*args, **kwargs)
+    return inner
+
+
+class TemporarySite(Site):
+    """
+    Context handler which creates a temporary site for testing.
+    """
+
+    def __init__(self, testcase, configuration):
+        temporary_directory = tempfile.TemporaryDirectory()
+        super().__init__(testcase, temporary_directory.name)
+        self.temporary_directory = temporary_directory
+        self.configuration = configuration
+
+    def __enter__(self):
+        self.pwd = os.getcwd()
+
+        # Create the configuration file.
+        with open(os.path.join(self.temporary_directory.name, "site.yaml"), "w") as fh:
+            yaml.dump(self.configuration, fh)
+
+        # Create the required directories.
+        utils.makedirs(os.path.join(self.temporary_directory.name, "content"))
+        utils.makedirs(os.path.join(self.temporary_directory.name, "templates"))
+
+        os.chdir(self.temporary_directory.name)
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        os.chdir(self.pwd)
+        self.temporary_directory.cleanup()
 
 
 def run_incontext(args, plugins_directory=None):
