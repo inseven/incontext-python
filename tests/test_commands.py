@@ -209,7 +209,9 @@ class CommandsTestCase(unittest.TestCase):
     @common.with_temporary_directory
     def test_new_site(self):
         common.run_incontext(["new", "example"], plugins_directory=paths.PLUGINS_DIR)
-        self.assertTrue(os.path.exists(os.path.join("example/README.md")))
         site = common.Site(self, "example")
+        site.assertExists("README.md")
+        site.assertNotExists(".git")
+        site.assertNotExists(".github")
         site.build()
         site.assertExists("build/files/index.html")
