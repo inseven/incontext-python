@@ -23,6 +23,8 @@ Most existing static site generators do a great job with text content, but treat
 ## Getting Started
 
 ```bash
+incontext new my-new-site
+cd my-new-site
 incontext build
 ```
 
