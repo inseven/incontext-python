@@ -40,4 +40,5 @@ def command_tests(incontext, options):
                                path])
         logging.info("Creating '%s'...", options.path)
         shutil.rmtree(os.path.join(path, ".git"))
+        shutil.rmtree(os.path.join(path, ".github"))
         shutil.copytree(path, os.path.abspath(options.path))
