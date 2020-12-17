@@ -20,18 +20,25 @@
 
 import logging
 import os
+import shutil
 import subprocess
+import tempfile
 
 import incontext
-import paths
 
 
-@incontext.command("tests", help="Run the tests")
+@incontext.command("new", help="Create a new site", arguments=[
+    incontext.Argument("path", help="destination of the new site")
+])
 def command_tests(incontext, options):
-    environment = dict(os.environ)
-    environment["PYTHONPATH"] = paths.INCONTEXT_DIRECTORY
-    try:
-        subprocess.check_call(["nosetests", "-v", paths.TESTS_DIR], env=environment)
-    except subprocess.CalledProcessError:
-        logging.error("Test run failed.")
-        exit(1)
+    print(os.path.abspath(options.site))
+    with tempfile.TemporaryDirectory() as path:
+        logging.info("Cloning site...")
+        subprocess.check_call(["git", "clone",
+                               "--depth", "1",
+                               "https://github.com/inseven/incontext-starter-site.git",
+                               path])
+        logging.info("Creating '%s'...", options.path)
+        shutil.rmtree(os.path.join(path, ".git"))
+        shutil.rmtree(os.path.join(path, ".github"))
+        shutil.copytree(path, os.path.abspath(options.path))

@@ -42,6 +42,7 @@ class PluginsTestCase(unittest.TestCase):
                                  "build",
                                  "build-documentation",
                                  "clean",
+                                 "new",
                                  "publish",
                                  "tests",
                                  "watch",

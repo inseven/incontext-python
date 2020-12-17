@@ -68,7 +68,7 @@ class CommandsTestCase(unittest.TestCase):
         with tempfile.TemporaryDirectory() as path:
             self.assertEqual(len(utils.find(path)), 0)
             common.run_incontext(["build-documentation", path], plugins_directory=paths.PLUGINS_DIR)
-            self.assertEqual(len(utils.find(path)), 25)
+            self.assertEqual(len(utils.find(path)), 26)
 
     def test_add_draft_and_publish_with_build(self):
         configuration = {
@@ -205,3 +205,13 @@ class CommandsTestCase(unittest.TestCase):
             site.touch("content/foo.txt")
             site.build()
             site.assertNotExists("build/files/foo.txt")
+
+    @common.with_temporary_directory
+    def test_new_site(self):
+        common.run_incontext(["new", "example"], plugins_directory=paths.PLUGINS_DIR)
+        site = common.Site(self, "example")
+        site.assertExists("README.md")
+        site.assertNotExists(".git")
+        site.assertNotExists(".github")
+        site.build()
+        site.assertExists("build/files/index.html")
