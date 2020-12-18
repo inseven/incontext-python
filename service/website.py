@@ -96,6 +96,7 @@ def initialize(templates_path, store_path, config):
     app.jinja_env.add_extension('extensions.Gallery')
     app.jinja_env.add_extension('extensions.STL')
     app.jinja_env.add_extension('extensions.Video')
+    app.jinja_env.add_extension('extensions.TemplateExtension')
 
 
 def directory_mtime(path):
@@ -298,6 +299,13 @@ class DocumentWrapper(object):
             exit("Unknown query '%s'." % (identifier, ))
         return self._record_query(parameters)
 
+    def abspath(self, path):
+        if path == '.':
+            return self.url
+        if not path.startswith("/"):
+            return self.url + path
+        return path
+
     @property
     def content(self):
         if self._document["content"]:
@@ -407,7 +415,7 @@ class DefaultAttributeWrapper(object):
         self.wrapped = wrapped
         self.name = name
         self.value = value
-        
+
     def __getitem__(self, key):
         return self.__getattr__(key)
 
