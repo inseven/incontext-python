@@ -25,6 +25,7 @@ import copy
 import datetime
 import functools
 import hashlib
+import itertools
 import json as js
 import logging
 import os
@@ -146,7 +147,12 @@ class Site(object):
             cached_posts = self._cache_by_parent[parent]
         if cached_posts is not None:
             return sort_posts(cached_posts, ascending=ascending)
-        return [wrap_document(document) for document in app.jinja_env.store.getall(include=include, exclude=exclude, parent=parent, search=search, asc=ascending, **kwargs)]
+        return [wrap_document(document) for document in app.jinja_env.store.getall(include=include,
+                                                                                   exclude=exclude,
+                                                                                   parent=parent,
+                                                                                   search=search,
+                                                                                   asc=ascending,
+                                                                                   **kwargs)]
 
     def post(self, url):
         self.load_cache()
@@ -383,6 +389,11 @@ def json(object):
 @app.add_template_filter
 def text(html):
     return " ".join(lxml.html.fromstring(html).text_content().split(" ")[:40])
+
+
+@app.add_template_filter
+def slice_list(items, start=0, stop=0):
+    return itertools.islice(items, start, stop)
 
 
 @app.add_template_filter
