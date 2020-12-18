@@ -18,13 +18,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import jinja2
+import logging
 import uuid
+
+import jinja2
 
 from jinja2 import nodes
 from jinja2.ext import Extension
 
-import converters
 import converters
 
 
@@ -80,3 +81,36 @@ class STL(SimpleExtension):
         return template.render(site=self.environment.site,
                                path=path,
                                uuid=str(uuid.uuid1()))
+
+
+class TemplateExtension(Extension):
+
+    tags = {"template"}
+
+    def __init__(self, environment):
+        super(TemplateExtension, self).__init__(environment)
+
+    def parse(self, parser):
+        lineno = next(parser.stream).lineno
+        parameters = [parser.parse_expression()]
+
+        while parser.stream.look().type != "data" and parser.stream.look().type != "eof":
+            key = parser.parse_expression()
+            assert parser.stream.skip_if("colon")
+            value = parser.parse_expression()
+            parameters.extend([jinja2.nodes.Const(key.name), value])
+            parser.stream.skip_if("comma")
+
+        context = jinja2.nodes.ContextReference()
+        args = [context, jinja2.nodes.List(parameters)]
+        return nodes.CallBlock(self.call_method('render', args), [], [], "").set_lineno(lineno)
+
+    def render(self, context, parameters, caller):
+        template = parameters.pop(0)
+        args = {}
+        while parameters:
+            key = parameters.pop(0)
+            value = parameters.pop(0)
+            args[key] = value
+        template = self.environment.get_template(template)
+        return template.render(site=self.environment.site, page=context["page"], **args)
