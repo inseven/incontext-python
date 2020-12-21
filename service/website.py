@@ -95,7 +95,6 @@ def initialize(templates_path, store_path, config):
     app.jinja_env.extend(store=store.DocumentStore(app.config["STORE_PATH"]))
 
     app.jinja_env.add_extension('extensions.Gallery')
-    app.jinja_env.add_extension('extensions.STL')
     app.jinja_env.add_extension('extensions.Video')
     app.jinja_env.add_extension('extensions.TemplateExtension')
 

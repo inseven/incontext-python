@@ -70,19 +70,6 @@ class Video(SimpleExtension):
                                video=self.environment.store.get(url))
 
 
-class STL(SimpleExtension):
-
-    tags = set(['stl'])
-
-    def render(self, context, path, caller):
-        if not path.startswith("/"):
-            path = context["page"]["url"] + path
-        template = self.environment.get_template("extensions/stl.html")
-        return template.render(site=self.environment.site,
-                               path=path,
-                               uuid=str(uuid.uuid1()))
-
-
 class TemplateExtension(Extension):
 
     tags = {"template"}
