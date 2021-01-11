@@ -4,3 +4,5 @@
 .sass-cache
 Pipfile.lock
 __pycache__
+.nova
+.venv
