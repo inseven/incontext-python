@@ -26,6 +26,7 @@ import os
 import re
 import shutil
 import subprocess
+import tempfile
 
 import handlers.gallery as gallery
 import paths
@@ -81,22 +82,6 @@ def subcommand_add_thought(incontext, parser):
     return add_thought
 
 
-def get_exif_date(exif):
-    keys = ["DateTimeOriginal",
-            "DateCreated",
-            "ContentCreateDate",
-            "CreationDate",
-            "FileModifyDate"]
-    for key in keys:
-        if key in exif:
-            return exif[key]
-    raise KeyError("Missing date")
-
-
-def exiftool(command):
-    subprocess.check_call(["exiftool"] + command)
-
-
 def subcommand_add_snapshot(incontext, parser):
     parser.add_argument("file", type=str, help="image file to add")
     parser.add_argument("--title", "-t", type=str, help="title")
@@ -105,37 +90,48 @@ def subcommand_add_snapshot(incontext, parser):
     def add_snapshot(options):
         path = os.path.abspath(options.file)
 
-        exif = gallery.exif(path)
+        # Working directory.
+        with tempfile.TemporaryDirectory() as temporary_directory:
 
-        date = get_exif_date(exif).strftime("%Y-%m-%d-%H-%M-%S")
+            # InContext doesn't handle TIFF files well, so we convert them to JPEG if necessary.
+            filename = os.path.basename(path)
+            basename, ext = os.path.splitext(filename)
+            if ext.lower() == ".tiff":
+                logging.info("Converting TIFF to JPEG...")
+                jpeg_path = os.path.join(temporary_directory, f"{basename}.jpeg")
+                subprocess.check_call(["convert", path, "-quality", "100", jpeg_path])
+                path = jpeg_path
 
-        title = ""
-        try:
-            title = exif["Title"]
-        except KeyError:
-            pass
-        if options.title:
-            title = options.title
-        title = utils.safe_basename(title)
-        basename, ext = os.path.splitext(path)
-        dirname = os.path.dirname(basename)
-        filename = date
-        if title:
-            filename = f"{date}-{title}"
+            exif = gallery.Exif(path)
+            date = exif.date.strftime("%Y-%m-%d-%H-%M-%S")
 
-        if options.title or options.description:
-            sidecar_path = os.path.join(incontext.configuration.site.paths.snapshots, filename + ".exif")
-            sidecar = {}
+            title = ""
+            try:
+                title = exif.title
+            except KeyError:
+                pass
             if options.title:
-                sidecar["Title"] = options.title
-            if options.description:
-                sidecar["Description"] = options.description
-            with open(sidecar_path, "w") as fh:
-                fh.write(json.dumps(sidecar, indent=4))
-                fh.write("\n")
+                title = options.title
+            title = utils.safe_basename(title)
+            basename, ext = os.path.splitext(path)
+            dirname = os.path.dirname(basename)
+            filename = date
+            if title:
+                filename = f"{date}-{title}"
 
-        destination = os.path.join(incontext.configuration.site.paths.snapshots, filename + ext)
-        shutil.copyfile(path, destination)
+            if options.title or options.description:
+                sidecar_path = os.path.join(incontext.configuration.site.paths.snapshots, filename + ".exif")
+                sidecar = {}
+                if options.title:
+                    sidecar["Title"] = options.title
+                if options.description:
+                    sidecar["Description"] = options.description
+                with open(sidecar_path, "w") as fh:
+                    fh.write(json.dumps(sidecar, indent=4))
+                    fh.write("\n")
+
+            destination = os.path.join(incontext.configuration.site.paths.snapshots, filename + ext)
+            shutil.copyfile(path, destination)
 
     return add_snapshot
 
