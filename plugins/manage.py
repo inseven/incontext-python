@@ -98,8 +98,13 @@ def subcommand_add_snapshot(incontext, parser):
             basename, ext = os.path.splitext(filename)
             if ext.lower() == ".tiff":
                 logging.info("Converting TIFF to JPEG...")
+
                 jpeg_path = os.path.join(temporary_directory, f"{basename}.jpeg")
                 subprocess.check_call(["convert", path, "-quality", "100", jpeg_path])
+
+                # Unfortunately we also need to copy the metadata in a separate step.
+                subprocess.check_call(["exiftool", "-TagsFromFile", path, "-all:all>all:all", jpeg_path])
+
                 path = jpeg_path
 
             exif = gallery.Exif(path)
