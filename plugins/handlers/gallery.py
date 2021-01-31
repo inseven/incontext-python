@@ -46,6 +46,34 @@ import store
 import utils
 
 
+PRIORITIZED_DATE_KEYS = [
+    "DateTimeOriginal",
+    "CreateDate",
+    "ContentCreateDate",
+    "CreationDate",
+    "FileModifyDate",
+]
+
+
+class Exif(object):
+
+    def __init__(self, path):
+        self.path = path
+        self.exif = exif(path)
+
+    @property
+    def date(self):
+        for key in PRIORITIZED_DATE_KEYS:
+            if key in self.exif:
+                logging.debug("Selecting date from '%s' exif key.", key)
+                return self.exif[key]
+        raise KeyError("date")
+
+    @property
+    def title(self):
+        return self.exif["Title"]
+
+
 def initialize_plugin(incontext):
     incontext.add_handler("import_photo", import_photo)
 
@@ -94,7 +122,7 @@ def exif(path):
             for key, value in sidecar.items():
                 data[key] = value
 
-    for field in ["CreationDate", "DateTimeOriginal", "ContentCreateDate", "FileModifyDate"]:
+    for field in PRIORITIZED_DATE_KEYS:
         if field in data:
             data[field] = dateutil.parser.parse(data[field].replace(":", "-", 2))
 
@@ -207,7 +235,7 @@ def imagemagick_resize(source, destination, size):
 def gifsicle_resize(source, destination, size):
     """
     Resize a gif using the `gifsicle` command line utility (see [](https://www.lcdf.org/gifsicle/)).
-    
+
     Resizing using animated gifs using ImageMagick will often produce very large output files and, in the case of
     incrementally encoded images, result in completely broken output.
     """
