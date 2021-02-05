@@ -192,6 +192,16 @@ def safe_basename(title):
     return title
 
 
+def value_or_default(getter, default=None):
+    """
+    Ignore any KeyError raised by the getter and return the default value instead.
+    """
+    try:
+        return getter()
+    except KeyError:
+        return default
+
+
 def sass(source, destination):
     subprocess.check_call(["sass",
                            "--trace",

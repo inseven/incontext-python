@@ -59,19 +59,28 @@ class Exif(object):
 
     def __init__(self, path):
         self.path = path
-        self.exif = exif(path)
+        self.data = exif(path)
+
+    def _first_value(self, keys):
+        for key in keys:
+            try:
+                logging.info(f"Trying '%s'...", key)
+                return self.data[key]
+            except KeyError:
+                pass
+        raise KeyError(", ".join(keys))
 
     @property
     def date(self):
-        for key in PRIORITIZED_DATE_KEYS:
-            if key in self.exif:
-                logging.debug("Selecting date from '%s' exif key.", key)
-                return self.exif[key]
-        raise KeyError("date")
+        return self._first_value(PRIORITIZED_DATE_KEYS)
 
     @property
     def title(self):
-        return self.exif["Title"]
+        return self._first_value(["Title", "DisplayName", "ObjectName"])
+
+    @property
+    def description(self):
+        return self._first_value(["ImageDescription", "Description", "ArtworkContentDescription"])
 
 
 def initialize_plugin(incontext):
@@ -369,6 +378,119 @@ def first_value_or_none(dictionary, keys):
     return None
 
 
+class TransformFailure(Exception):
+    pass
+
+
+class Skip(Exception):
+    pass
+
+
+class Key(object):
+
+    def __init__(self, key):
+        self.key = key
+
+    def __call__(self, dictionary):
+        if self.key in dictionary:
+            return dictionary[self.key]
+        raise TransformFailure()
+
+
+class First(object):
+
+    def __init__(self, *transforms):
+        self.transforms = transforms
+
+    def __call__(self, data):
+        for transform in self.transforms:
+            try:
+                return transform(data)
+            except TransformFailure:
+                pass
+        raise TransformFailure()
+
+
+class Default(object):
+
+    def __init__(self, value):
+        self.value = value
+
+    def __call__(self, data):
+        return self.value
+
+
+class Empty(object):
+
+    def __call__(self, data):
+        raise Skip()
+
+
+class Dictionary(object):
+
+    def __init__(self, schema):
+        self.schema = schema
+
+    def __call__(self, data):
+        return transform_data(self.schema, data)
+
+
+def transform_data(schema, data):
+
+    result = {}
+    for key, transform in schema.items():
+        try:
+            result[key] = transform(data)
+        except Skip:
+            pass
+    return result
+
+
+
+METADATA_SCHEMA = {
+
+    "title": First(Key("Title"), Key("DisplayName"), Key("ObjectName"), Empty()),
+    "content": First(Key("ImageDescription"), Key("Description"), Key("ArtworkContentDescription"), Default(None)),
+    "date": First(Key("DateTimeOriginal"), Empty()),
+    "projection": First(Key("ProjectionType"), Empty()),
+    "location": First(Dictionary({
+        "latitude": Key("GPSLatitude"),
+        "longitude": Key("GPSLongitude"),
+    }), Empty())
+
+}
+
+DEFAULT_PROFILES = {
+    "image": {
+        "width": 1600,
+        "scale": 1
+    },
+    "thumbnail": {
+        "height": 240,
+        "scale": 2
+    },
+}
+
+EQUIRECTANGULAR_PROFILES = {
+    "image": {
+        "width": 10000,
+        "scale": 1
+    },
+    "thumbnail": {
+        "height": 240,
+        "scale": 2
+    },
+}
+
+
+def metadata_for_media_file(root, path, title_from_filename):
+    metadata = converters.parse_path(path, title_from_filename=title_from_filename)
+    exif_data = exif(os.path.join(root, path))
+    metadata_from_exif = transform_data(METADATA_SCHEMA, exif_data)
+    metadata = converters.merge_dictionaries(metadata, metadata_from_exif)
+    return metadata
+
+
 def process_image(incontext, root, destination, dirname, basename, category, title_from_filename=True):
     source_path = os.path.join(root, dirname, basename)
     identifier = generate_identifier(basename)
@@ -378,55 +500,7 @@ def process_image(incontext, root, destination, dirname, basename, category, tit
     name, ext = os.path.splitext(basename)
     utils.makedirs(destination_dir)
 
-    metadata = load_metadata(markdown_path)
-
-    DEFAULT_PROFILES = {
-        "image": {
-            "width": 1600,
-            "scale": 1
-        },
-        "thumbnail": {
-            "height": 240,
-            "scale": 2
-        },
-    }
-
-    EQUIRECTANGULAR_PROFILES = {
-        "image": {
-            "width": 10000,
-            "scale": 1
-        },
-        "thumbnail": {
-            "height": 240,
-            "scale": 2
-        },
-    }
-
-    # Use the common path parsing from converters to ensure we pick up information like the title, etc.
-    metadata = converters.parse_path(os.path.join(dirname, basename), title_from_filename=title_from_filename)
-
-    # Read data from the EXIF and add it to the metadata
-
-    exif_data = exif(source_path)
-
-    # Select title with priority: Title, ObjectName
-    if "ObjectName" in exif_data:
-        metadata["title"] = exif_data["ObjectName"]
-    if "Title" in exif_data:
-        metadata["title"] = exif_data["Title"]
-
-    metadata["content"] = first_value_or_none(exif_data, ["ImageDescription", "Description", "ArtworkContentDescription"])
-
-    if "DateTimeOriginal" in exif_data:
-        metadata["date"] = exif_data["DateTimeOriginal"]
-
-    if "ProjectionType" in exif_data:
-        metadata["projection"] = exif_data["ProjectionType"]
-        logging.debug(f"projection = {metadata['projection']}")
-
-    # Read the location from the exif.
-    if "GPSLatitude" in exif_data and "GPSLongitude" in exif_data:
-        metadata["location"] = {"latitude": exif_data["GPSLatitude"], "longitude": exif_data["GPSLongitude"]}
+    metadata = metadata_for_media_file(root, os.path.join(dirname, basename), title_from_filename=title_from_filename)
 
     # Determine which profiles to use; we use a different profile for equirectangular projections.
     # TODO: In an ideal world we would allow all of this special case behaviour to be configured in site.yaml

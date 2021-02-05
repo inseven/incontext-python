@@ -40,10 +40,12 @@ def read_frontmatter(path):
     return data
 
 
+# TODO: Move this until utils.
 def merge_dictionaries(a, b):
+    result = dict(a)
     for key, value in b.items():
-        a[key] = value
-    return a
+        result[key] = value
+    return result
 
 
 def clean_name(path):
