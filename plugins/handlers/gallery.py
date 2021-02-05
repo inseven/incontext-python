@@ -141,14 +141,6 @@ def exif(path):
     return data
 
 
-class MissingDate(Exception):
-    pass
-
-
-class MissingLocation(Exception):
-    pass
-
-
 def load_image(path):
     """
     Safe method for loading PIL.Image instances with additional support for HEIF files.
