@@ -102,10 +102,9 @@ class SchemaTestCase(unittest.TestCase):
             s("45 deg 31' 42.13\" N")
 
     def test_exif_date(self):
-        # TODO: We also need to support dates like 2019:09:10 09:04:30.
-        # TODO: We should also check for failures.
         s = EXIFDate(Identity())
         self.assertEquals(s("2019:10:20 12:14:09.606-07:00"), dateutil.parser.parse("2019-10-20 12:14:09.606-07:00"))
+        self.assertEquals(s("2019:09:10 09:04:30"), dateutil.parser.parse("2019-09-10 09:04:30"))
 
     def test_date_transform_with_first(self):
         s = First(EXIFDate(First(Key("date"), Key("secondary_date"))), Default(None))
