@@ -45,16 +45,8 @@ import converters
 import store
 import utils
 
-from schema import Default, Dictionary, Empty, First, GPSCoordinate, Key
+from schema import Default, Dictionary, Empty, EXIFDate, First, GPSCoordinate, Key
 
-
-PRIORITIZED_DATE_KEYS = [
-    "DateTimeOriginal",
-    "CreateDate",
-    "ContentCreateDate",
-    "CreationDate",
-    "FileModifyDate",
-]
 
 EXTENSION_TO_FORMAT = {
     ".png": "png",
@@ -72,7 +64,7 @@ METADATA_SCHEMA = Dictionary({
 
     "title": First(Key("Title"), Key("DisplayName"), Key("ObjectName"), Empty()),
     "content": First(Key("ImageDescription"), Key("Description"), Key("ArtworkContentDescription"), Default(None)),
-    "date": First(Key("DateTimeOriginal"), Key("ContentCreateDate"), Key("CreationDate"), Empty()),
+    "date": First(EXIFDate(First(Key("DateTimeOriginal"), Key("CreateDate"), Key("ContentCreateDate"), Key("CreationDate"), Key("FileModifyDate"))), Empty()),
     "projection": First(Key("ProjectionType"), Empty()),
     "location": First(Dictionary({
         "latitude": GPSCoordinate(Key("GPSLatitude")),
@@ -104,23 +96,21 @@ EQUIRECTANGULAR_PROFILES = {
 }
 
 
+# TODO: Remove this class.
 class Exif(object):
 
     def __init__(self, path):
         self.path = path
         self.exif = exif(path)
+        self.metadata = METADATA_SCHEMA(self.exif)
 
     @property
     def date(self):
-        for key in PRIORITIZED_DATE_KEYS:
-            if key in self.exif:
-                logging.debug("Selecting date from '%s' exif key.", key)
-                return self.exif[key]
-        raise KeyError("date")
+        return self.metadata["date"]
 
     @property
     def title(self):
-        return self.exif["Title"]
+        return self.metadata["title"]
 
 
 def initialize_plugin(incontext):
@@ -168,12 +158,9 @@ def exif(path):
     if os.path.exists(sidecar_path):
         with open(sidecar_path, "r") as fh:
             sidecar = json.loads(fh.read())
+            # TODO: Use the dictionary merge utility and test this to ensure sidecars are correctly loaded.
             for key, value in sidecar.items():
                 data[key] = value
-
-    for field in PRIORITIZED_DATE_KEYS:
-        if field in data:
-            data[field] = dateutil.parser.parse(data[field].replace(":", "-", 2))
 
     return data
 

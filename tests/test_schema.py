@@ -22,7 +22,9 @@
 
 import unittest
 
-from schema import Dictionary, Empty, First, GPSCoordinate, Identity, Key, Skip, TransformFailure
+import dateutil
+
+from schema import Default, Dictionary, Empty, EXIFDate, First, GPSCoordinate, Identity, Key, Skip, TransformFailure
 
 
 class SchemaTestCase(unittest.TestCase):
@@ -47,6 +49,10 @@ class SchemaTestCase(unittest.TestCase):
         s = Empty()
         with self.assertRaises(Skip):
             s("anything")
+
+    def test_default(self):
+        s = Default(None)
+        self.assertEqual(s("cheese"), None)
 
     def test_dictionary_with_empty(self):
         s = Dictionary({
@@ -94,3 +100,15 @@ class SchemaTestCase(unittest.TestCase):
         self.assertEqual(s("119.3941638889 E"), 119.3941638889)
         with self.assertRaises(AssertionError):
             s("45 deg 31' 42.13\" N")
+
+    def test_exif_date(self):
+        # TODO: We also need to support dates like 2019:09:10 09:04:30.
+        # TODO: We should also check for failures.
+        s = EXIFDate(Identity())
+        self.assertEquals(s("2019:10:20 12:14:09.606-07:00"), dateutil.parser.parse("2019-10-20 12:14:09.606-07:00"))
+
+    def test_date_transform_with_first(self):
+        s = First(EXIFDate(First(Key("date"), Key("secondary_date"))), Default(None))
+        self.assertEquals(s({"date": "2019:10:20 12:14:09.606-07:00"}), dateutil.parser.parse("2019-10-20 12:14:09.606-07:00"))
+        self.assertEquals(s({"secondary_date": "2019:10:20 12:14:09.606-07:00"}), dateutil.parser.parse("2019-10-20 12:14:09.606-07:00"))
+        self.assertEquals(s({"tertiary_date": "2019:10:20 12:14:09.606-07:00"}), None)
