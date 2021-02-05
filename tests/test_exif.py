@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+#
 # Copyright (c) 2016-2021 InSeven Limited
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,10 +20,32 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import os.path
+import datetime
+import os
+import unittest
+import sys
 
-INCONTEXT_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
-TESTS_DIR = os.path.join(INCONTEXT_DIRECTORY, "tests")
-SERVICE_DIR = os.path.join(INCONTEXT_DIRECTORY, "service")
-PLUGINS_DIR = os.path.join(INCONTEXT_DIRECTORY, "plugins")
-TEST_DATA_DIRECTORY = os.path.join(TESTS_DIR, "data")
+import paths
+
+sys.path.append(os.path.join(paths.PLUGINS_DIR, "handlers"))
+
+import gallery
+
+
+IMG_4056_JPEG = os.path.join(paths.TEST_DATA_DIRECTORY, "exif/IMG_4056.jpeg")
+IMG_4056_WITH_SIDECAR_JPEG = os.path.join(paths.TEST_DATA_DIRECTORY, "exif/IMG_4056_with_sidecar.jpeg")
+
+
+class ExifTestCase(unittest.TestCase):
+
+    def test_exif_title(self):
+        metadata = gallery.metadata_from_exif(IMG_4056_JPEG)
+        self.assertEqual(metadata["title"], "Wolf")
+
+    def test_exif_date(self):
+        metadata = gallery.metadata_from_exif(IMG_4056_JPEG)
+        self.assertEqual(metadata["date"], datetime.datetime(2019, 9, 10, 6, 49, 11))
+
+    def test_sidecar_overrides_title(self):
+        metadata = gallery.metadata_from_exif(IMG_4056_WITH_SIDECAR_JPEG)
+        self.assertEqual(metadata["title"], "Sunrise")

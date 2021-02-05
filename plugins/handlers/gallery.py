@@ -141,9 +141,7 @@ def exif(path):
     if os.path.exists(sidecar_path):
         with open(sidecar_path, "r") as fh:
             sidecar = json.loads(fh.read())
-            # TODO: Use the dictionary merge utility and test this to ensure sidecars are correctly loaded.
-            for key, value in sidecar.items():
-                data[key] = value
+            data = converters.merge_dictionaries(data, sidecar)
 
     return data
 
