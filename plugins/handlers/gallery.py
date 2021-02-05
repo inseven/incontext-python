@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2020 InSeven Limited
+# Copyright (c) 2016-2021 InSeven Limited
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +45,8 @@ import converters
 import store
 import utils
 
+from schema import Default, Dictionary, Empty, First, Key
+
 
 PRIORITIZED_DATE_KEYS = [
     "DateTimeOriginal",
@@ -53,6 +55,53 @@ PRIORITIZED_DATE_KEYS = [
     "CreationDate",
     "FileModifyDate",
 ]
+
+EXTENSION_TO_FORMAT = {
+    ".png": "png",
+    ".jpg": "jpeg",
+    ".jpeg": "jpeg",
+    ".gif": "gif",
+    ".tiff": "tiff",
+}
+
+IMAGEMAGICK_WHITELIST = [
+    ".gif",
+]
+
+METADATA_SCHEMA = Dictionary({
+
+    "title": First(Key("Title"), Key("DisplayName"), Key("ObjectName"), Empty()),
+    "content": First(Key("ImageDescription"), Key("Description"), Key("ArtworkContentDescription"), Default(None)),
+    "date": First(Key("DateTimeOriginal"), Key("ContentCreateDate"), Key("CreationDate"), Empty()),
+    "projection": First(Key("ProjectionType"), Empty()),
+    "location": First(Dictionary({
+        "latitude": Key("GPSLatitude"),
+        "longitude": Key("GPSLongitude"),
+    }), Empty())
+
+})
+
+DEFAULT_PROFILES = {
+    "image": {
+        "width": 1600,
+        "scale": 1
+    },
+    "thumbnail": {
+        "height": 240,
+        "scale": 2
+    },
+}
+
+EQUIRECTANGULAR_PROFILES = {
+    "image": {
+        "width": 10000,
+        "scale": 1
+    },
+    "thumbnail": {
+        "height": 240,
+        "scale": 2
+    },
+}
 
 
 class Exif(object):
@@ -137,14 +186,6 @@ def exif(path):
             data[field] = value
 
     return data
-
-
-class MissingDate(Exception):
-    pass
-
-
-class MissingLocation(Exception):
-    pass
 
 
 def load_image(path):
@@ -254,21 +295,10 @@ def gifsicle_resize(source, destination, size):
         raise e
 
 
-EXTENSION_TO_FORMAT = {
-    ".png": "png",
-    ".jpg": "jpeg",
-    ".jpeg": "jpeg",
-    ".gif": "gif",
-    ".tiff": "tiff",
-}
-
-IMAGEMAGICK_WHITELIST = [
-    ".gif",
-]
-
 IMAGE_RESIZE_HANDLERS = {
     ".gif": gifsicle_resize
 }
+
 
 def get_ext(path):
     return os.path.splitext(path)[1].lower()
@@ -360,13 +390,12 @@ def get_image_data(root, dirname, basename):
         return {"filename": basename, "width": width, "height": height}
 
 
-def first_value_or_none(dictionary, keys):
-    for key in keys:
-        try:
-            return dictionary[key]
-        except KeyError:
-            pass
-    return None
+def metadata_for_media_file(root, path, title_from_filename):
+    metadata = converters.parse_path(path, title_from_filename=title_from_filename)
+    exif_data = exif(os.path.join(root, path))
+    metadata_from_exif = METADATA_SCHEMA(exif_data)
+    metadata = converters.merge_dictionaries(metadata, metadata_from_exif)
+    return metadata
 
 
 def process_image(incontext, root, destination, dirname, basename, category, title_from_filename=True):
@@ -378,55 +407,8 @@ def process_image(incontext, root, destination, dirname, basename, category, tit
     name, ext = os.path.splitext(basename)
     utils.makedirs(destination_dir)
 
-    metadata = load_metadata(markdown_path)
-
-    DEFAULT_PROFILES = {
-        "image": {
-            "width": 1600,
-            "scale": 1
-        },
-        "thumbnail": {
-            "height": 240,
-            "scale": 2
-        },
-    }
-
-    EQUIRECTANGULAR_PROFILES = {
-        "image": {
-            "width": 10000,
-            "scale": 1
-        },
-        "thumbnail": {
-            "height": 240,
-            "scale": 2
-        },
-    }
-
-    # Use the common path parsing from converters to ensure we pick up information like the title, etc.
-    metadata = converters.parse_path(os.path.join(dirname, basename), title_from_filename=title_from_filename)
-
-    # Read data from the EXIF and add it to the metadata
-
-    exif_data = exif(source_path)
-
-    # Select title with priority: Title, ObjectName
-    if "ObjectName" in exif_data:
-        metadata["title"] = exif_data["ObjectName"]
-    if "Title" in exif_data:
-        metadata["title"] = exif_data["Title"]
-
-    metadata["content"] = first_value_or_none(exif_data, ["ImageDescription", "Description", "ArtworkContentDescription"])
-
-    if "DateTimeOriginal" in exif_data:
-        metadata["date"] = exif_data["DateTimeOriginal"]
-
-    if "ProjectionType" in exif_data:
-        metadata["projection"] = exif_data["ProjectionType"]
-        logging.debug(f"projection = {metadata['projection']}")
-
-    # Read the location from the exif.
-    if "GPSLatitude" in exif_data and "GPSLongitude" in exif_data:
-        metadata["location"] = {"latitude": exif_data["GPSLatitude"], "longitude": exif_data["GPSLongitude"]}
+    metadata = metadata_for_media_file(root, os.path.join(dirname, basename),
+                                       title_from_filename=title_from_filename)
 
     # Determine which profiles to use; we use a different profile for equirectangular projections.
     # TODO: In an ideal world we would allow all of this special case behaviour to be configured in site.yaml

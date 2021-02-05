@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2020 InSeven Limited
+# Copyright (c) 2016-2021 InSeven Limited
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -43,30 +43,12 @@ def import_video(incontext, from_directory, to_directory, category, title_from_f
         destination = os.path.join(to_directory, dirname, basename)
         utils.makedirs(os.path.join(to_directory, dirname))
 
-        data = converters.parse_path(os.path.join(dirname, basename), title_from_filename=title_from_filename)
-        data['content'] = ''
+        data = gallery.metadata_for_media_file(root, os.path.join(dirname, basename),
+                                               title_from_filename=title_from_filename)
         data["category"] = category
         data["template"] = "photo.html"  # TODO: Change this to be part of the configuration.
 
-        exif = gallery.exif(path)
-
-        if "Title" in exif:
-            data["title"] = exif["Title"]
-
-        if "Description" in exif:
-            data["content"] = exif["Description"]
-
-        if "ImageDescription" in exif:
-            data["content"] = exif["ImageDescription"]
-
-        if "CreationDate" in exif:
-            data["date"] = exif["CreationDate"]
-
-        if "ContentCreateDate" in exif:
-            data["date"] = exif["ContentCreateDate"]
-
         name, _ = os.path.splitext(basename)
-
         mp4_name = "%s.mp4" % name
         mp4_path = os.path.join(to_directory, dirname, mp4_name)
         if not os.path.exists(mp4_path):

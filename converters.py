@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2020 InSeven Limited
+# Copyright (c) 2016-2021 InSeven Limited
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -40,10 +40,12 @@ def read_frontmatter(path):
     return data
 
 
+# TODO: Move converters.merge_dictionaries into utils #96
 def merge_dictionaries(a, b):
+    result = dict(a)
     for key, value in b.items():
-        a[key] = value
-    return a
+        result[key] = value
+    return result
 
 
 def clean_name(path):
