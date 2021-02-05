@@ -12,15 +12,18 @@ jobs:
     runs-on: Ubuntu-20.04
 
     steps:
-      
+
     - name: Checkout source
       uses: actions/checkout@v2
-      
+      with:
+        submodules: recursive
+        lfs: true
+
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
         python-version: 3.8
-        
+
     - name: Run tests
       run: |
         python3 -u incontext tests

@@ -22,6 +22,8 @@
 
 import re
 
+import dateutil
+
 
 class TransformFailure(Exception):
     pass
@@ -94,6 +96,19 @@ class GPSCoordinate(object):
         direction = match.group(2)
         if direction == "W":
             value = value * -1
+        return value
+
+
+class EXIFDate(object):
+
+    def __init__(self, transform):
+        self.transform = transform
+
+    def __call__(self, data):
+        data = self.transform(data)
+        # ExifTool makes the odd decision to separate the date components with a colon, meaning that `dateutil` cannot
+        # parse it directly, so we fix it up.
+        value = dateutil.parser.parse(data.replace(":", "-", 2))
         return value
 
 

@@ -107,12 +107,12 @@ def subcommand_add_snapshot(incontext, parser):
 
                 path = jpeg_path
 
-            exif = gallery.Exif(path)
-            date = exif.date.strftime("%Y-%m-%d-%H-%M-%S")
+            exif_metadata = gallery.metadata_from_exif(path)
+            date = exif_metadata["date"].strftime("%Y-%m-%d-%H-%M-%S")
 
             title = ""
             try:
-                title = exif.title
+                title = exif_metadata["title"]
             except KeyError:
                 pass
             if options.title:

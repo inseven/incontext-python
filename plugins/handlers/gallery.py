@@ -45,16 +45,8 @@ import converters
 import store
 import utils
 
-from schema import Default, Dictionary, Empty, First, GPSCoordinate, Key
+from schema import Default, Dictionary, Empty, EXIFDate, First, GPSCoordinate, Key
 
-
-PRIORITIZED_DATE_KEYS = [
-    "DateTimeOriginal",
-    "CreateDate",
-    "ContentCreateDate",
-    "CreationDate",
-    "FileModifyDate",
-]
 
 EXTENSION_TO_FORMAT = {
     ".png": "png",
@@ -72,7 +64,7 @@ METADATA_SCHEMA = Dictionary({
 
     "title": First(Key("Title"), Key("DisplayName"), Key("ObjectName"), Empty()),
     "content": First(Key("ImageDescription"), Key("Description"), Key("ArtworkContentDescription"), Default(None)),
-    "date": First(Key("DateTimeOriginal"), Key("ContentCreateDate"), Key("CreationDate"), Empty()),
+    "date": First(EXIFDate(First(Key("DateTimeOriginal"), Key("CreateDate"), Key("ContentCreateDate"), Key("CreationDate"), Key("FileModifyDate"))), Empty()),
     "projection": First(Key("ProjectionType"), Empty()),
     "location": First(Dictionary({
         "latitude": GPSCoordinate(Key("GPSLatitude")),
@@ -102,25 +94,6 @@ EQUIRECTANGULAR_PROFILES = {
         "scale": 2
     },
 }
-
-
-class Exif(object):
-
-    def __init__(self, path):
-        self.path = path
-        self.exif = exif(path)
-
-    @property
-    def date(self):
-        for key in PRIORITIZED_DATE_KEYS:
-            if key in self.exif:
-                logging.debug("Selecting date from '%s' exif key.", key)
-                return self.exif[key]
-        raise KeyError("date")
-
-    @property
-    def title(self):
-        return self.exif["Title"]
 
 
 def initialize_plugin(incontext):
@@ -168,12 +141,7 @@ def exif(path):
     if os.path.exists(sidecar_path):
         with open(sidecar_path, "r") as fh:
             sidecar = json.loads(fh.read())
-            for key, value in sidecar.items():
-                data[key] = value
-
-    for field in PRIORITIZED_DATE_KEYS:
-        if field in data:
-            data[field] = dateutil.parser.parse(data[field].replace(":", "-", 2))
+            data = converters.merge_dictionaries(data, sidecar)
 
     return data
 
@@ -380,11 +348,19 @@ def get_image_data(root, dirname, basename):
         return {"filename": basename, "width": width, "height": height}
 
 
+def metadata_from_exif(path):
+    """
+    Generate a metadata dictionary from just the EXIF data contained within the file at `path`, as specified within
+    `METADATA_SCHEMA`.
+    """
+    exif_data = exif(path)
+    return METADATA_SCHEMA(exif_data)
+
+
 def metadata_for_media_file(root, path, title_from_filename):
     metadata = converters.parse_path(path, title_from_filename=title_from_filename)
-    exif_data = exif(os.path.join(root, path))
-    metadata_from_exif = METADATA_SCHEMA(exif_data)
-    metadata = converters.merge_dictionaries(metadata, metadata_from_exif)
+    exif_metadata = metadata_from_exif(os.path.join(root, path))
+    metadata = converters.merge_dictionaries(metadata, exif_metadata)
     return metadata
 
 
