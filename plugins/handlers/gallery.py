@@ -45,6 +45,8 @@ import converters
 import store
 import utils
 
+from schema import Default, Dictionary, Empty, First, Key
+
 
 PRIORITIZED_DATE_KEYS = [
     "DateTimeOriginal",
@@ -360,85 +362,7 @@ def get_image_data(root, dirname, basename):
         return {"filename": basename, "width": width, "height": height}
 
 
-def first_value_or_none(dictionary, keys):
-    for key in keys:
-        try:
-            return dictionary[key]
-        except KeyError:
-            pass
-    return None
-
-
-class TransformFailure(Exception):
-    pass
-
-
-class Skip(Exception):
-    pass
-
-
-class Key(object):
-
-    def __init__(self, key):
-        self.key = key
-
-    def __call__(self, dictionary):
-        if self.key in dictionary:
-            return dictionary[self.key]
-        raise TransformFailure()
-
-
-class First(object):
-
-    def __init__(self, *transforms):
-        self.transforms = transforms
-
-    def __call__(self, data):
-        for transform in self.transforms:
-            try:
-                return transform(data)
-            except TransformFailure:
-                pass
-        raise TransformFailure()
-
-
-class Default(object):
-
-    def __init__(self, value):
-        self.value = value
-
-    def __call__(self, data):
-        return self.value
-
-
-class Empty(object):
-
-    def __call__(self, data):
-        raise Skip()
-
-
-class Dictionary(object):
-
-    def __init__(self, schema):
-        self.schema = schema
-
-    def __call__(self, data):
-        return transform_data(self.schema, data)
-
-
-def transform_data(schema, data):
-
-    result = {}
-    for key, transform in schema.items():
-        try:
-            result[key] = transform(data)
-        except Skip:
-            pass
-    return result
-
-
-
-METADATA_SCHEMA = {
+METADATA_SCHEMA = Dictionary({
 
     "title": First(Key("Title"), Key("DisplayName"), Key("ObjectName"), Empty()),
     "content": First(Key("ImageDescription"), Key("Description"), Key("ArtworkContentDescription"), Default(None)),
@@ -449,7 +373,7 @@ METADATA_SCHEMA = {
         "longitude": Key("GPSLongitude"),
     }), Empty())
 
-}
+})
 
 DEFAULT_PROFILES = {
     "image": {
@@ -477,7 +401,7 @@ EQUIRECTANGULAR_PROFILES = {
 def metadata_for_media_file(root, path, title_from_filename):
     metadata = converters.parse_path(path, title_from_filename=title_from_filename)
     exif_data = exif(os.path.join(root, path))
-    metadata_from_exif = transform_data(METADATA_SCHEMA, exif_data)
+    metadata_from_exif = METADATA_SCHEMA(exif_data)
     metadata = converters.merge_dictionaries(metadata, metadata_from_exif)
     return metadata
 
