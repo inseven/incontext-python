@@ -56,6 +56,18 @@ PRIORITIZED_DATE_KEYS = [
     "FileModifyDate",
 ]
 
+EXTENSION_TO_FORMAT = {
+    ".png": "png",
+    ".jpg": "jpeg",
+    ".jpeg": "jpeg",
+    ".gif": "gif",
+    ".tiff": "tiff",
+}
+
+IMAGEMAGICK_WHITELIST = [
+    ".gif",
+]
+
 
 class Exif(object):
 
@@ -248,21 +260,10 @@ def gifsicle_resize(source, destination, size):
         raise e
 
 
-EXTENSION_TO_FORMAT = {
-    ".png": "png",
-    ".jpg": "jpeg",
-    ".jpeg": "jpeg",
-    ".gif": "gif",
-    ".tiff": "tiff",
-}
-
-IMAGEMAGICK_WHITELIST = [
-    ".gif",
-]
-
 IMAGE_RESIZE_HANDLERS = {
     ".gif": gifsicle_resize
 }
+
 
 def get_ext(path):
     return os.path.splitext(path)[1].lower()
