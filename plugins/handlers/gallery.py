@@ -59,28 +59,19 @@ class Exif(object):
 
     def __init__(self, path):
         self.path = path
-        self.data = exif(path)
-
-    def _first_value(self, keys):
-        for key in keys:
-            try:
-                logging.info(f"Trying '%s'...", key)
-                return self.data[key]
-            except KeyError:
-                pass
-        raise KeyError(", ".join(keys))
+        self.exif = exif(path)
 
     @property
     def date(self):
-        return self._first_value(PRIORITIZED_DATE_KEYS)
+        for key in PRIORITIZED_DATE_KEYS:
+            if key in self.exif:
+                logging.debug("Selecting date from '%s' exif key.", key)
+                return self.exif[key]
+        raise KeyError("date")
 
     @property
     def title(self):
-        return self._first_value(["Title", "DisplayName", "ObjectName"])
-
-    @property
-    def description(self):
-        return self._first_value(["ImageDescription", "Description", "ArtworkContentDescription"])
+        return self.exif["Title"]
 
 
 def initialize_plugin(incontext):
@@ -451,7 +442,7 @@ METADATA_SCHEMA = {
 
     "title": First(Key("Title"), Key("DisplayName"), Key("ObjectName"), Empty()),
     "content": First(Key("ImageDescription"), Key("Description"), Key("ArtworkContentDescription"), Default(None)),
-    "date": First(Key("DateTimeOriginal"), Empty()),
+    "date": First(Key("DateTimeOriginal"), Key("ContentCreateDate"), Key("CreationDate"), Empty()),
     "projection": First(Key("ProjectionType"), Empty()),
     "location": First(Dictionary({
         "latitude": Key("GPSLatitude"),
@@ -500,7 +491,8 @@ def process_image(incontext, root, destination, dirname, basename, category, tit
     name, ext = os.path.splitext(basename)
     utils.makedirs(destination_dir)
 
-    metadata = metadata_for_media_file(root, os.path.join(dirname, basename), title_from_filename=title_from_filename)
+    metadata = metadata_for_media_file(root, os.path.join(dirname, basename),
+                                       title_from_filename=title_from_filename)
 
     # Determine which profiles to use; we use a different profile for equirectangular projections.
     # TODO: In an ideal world we would allow all of this special case behaviour to be configured in site.yaml
