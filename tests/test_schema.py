@@ -22,10 +22,13 @@
 
 import unittest
 
-from schema import First, Key, TransformFailure
+from schema import Dictionary, Empty, First, Key, Skip, TransformFailure
 
 
 class SchemaTestCase(unittest.TestCase):
+
+    def assertSchema(self, schema, data, result):
+        self.assertEquals(schema(data), result)
 
     def test_key(self):
         s = Key("foo")
@@ -39,3 +42,41 @@ class SchemaTestCase(unittest.TestCase):
         self.assertEqual(s({"bar": "cheese"}), "cheese")
         with self.assertRaises(TransformFailure):
             s({"baz": "cheese"})
+
+    def test_empty(self):
+        s = Empty()
+        with self.assertRaises(Skip):
+            s("anything")
+
+    def test_dictionary_with_empty(self):
+        s = Dictionary({
+            "field": Empty()
+        })
+        self.assertEquals(s({"field": "cheese"}), {})
+
+    def test_dictionary_matching_key(self):
+        self.assertSchema(
+            Dictionary({
+                "foo": Key("foo")
+            }),
+            {"foo": "cheese"},
+            {"foo": "cheese"}
+        )
+
+    def test_dictionary_different_key(self):
+        self.assertSchema(
+            Dictionary({
+                "foo": Key("bar")
+            }),
+            {"bar": "cheese"},
+            {"foo": "cheese"}
+        )
+
+    def test_dictionary_multiple_keys(self):
+        self.assertSchema(
+            Dictionary({
+                "foo": First(Key("foo"), Key("bar"))
+            }),
+            {"bar": "cheese"},
+            {"foo": "cheese"}
+        )
