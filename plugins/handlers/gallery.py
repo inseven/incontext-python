@@ -96,23 +96,6 @@ EQUIRECTANGULAR_PROFILES = {
 }
 
 
-# TODO: Remove this class.
-class Exif(object):
-
-    def __init__(self, path):
-        self.path = path
-        self.exif = exif(path)
-        self.metadata = METADATA_SCHEMA(self.exif)
-
-    @property
-    def date(self):
-        return self.metadata["date"]
-
-    @property
-    def title(self):
-        return self.metadata["title"]
-
-
 def initialize_plugin(incontext):
     incontext.add_handler("import_photo", import_photo)
 
@@ -367,11 +350,19 @@ def get_image_data(root, dirname, basename):
         return {"filename": basename, "width": width, "height": height}
 
 
+def metadata_from_exif(path):
+    """
+    Generate a metadata dictionary from just the EXIF data contained within the file at `path`, as specified within
+    `METADATA_SCHEMA`.
+    """
+    exif_data = exif(path)
+    return METADATA_SCHEMA(exif_data)
+
+
 def metadata_for_media_file(root, path, title_from_filename):
     metadata = converters.parse_path(path, title_from_filename=title_from_filename)
-    exif_data = exif(os.path.join(root, path))
-    metadata_from_exif = METADATA_SCHEMA(exif_data)
-    metadata = converters.merge_dictionaries(metadata, metadata_from_exif)
+    exif_metadata = metadata_from_exif(os.path.join(root, path))
+    metadata = converters.merge_dictionaries(metadata, exif_metadata)
     return metadata
 
 
