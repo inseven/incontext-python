@@ -40,7 +40,7 @@ def read_frontmatter(path):
     return data
 
 
-# TODO: Move this until utils.
+# TODO: Move converters.merge_dictionaries into utils #96
 def merge_dictionaries(a, b):
     result = dict(a)
     for key, value in b.items():
