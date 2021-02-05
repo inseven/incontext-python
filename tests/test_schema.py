@@ -22,7 +22,7 @@
 
 import unittest
 
-from schema import Dictionary, Empty, First, Key, Skip, TransformFailure
+from schema import Dictionary, Empty, First, GPSCoordinate, Identity, Key, Skip, TransformFailure
 
 
 class SchemaTestCase(unittest.TestCase):
@@ -80,3 +80,17 @@ class SchemaTestCase(unittest.TestCase):
             {"bar": "cheese"},
             {"foo": "cheese"}
         )
+
+    def test_identity(self):
+        s = Identity()
+        self.assertEqual(s("Hello, World!"), "Hello, World!")
+        self.assertEqual(s({}), {})
+
+    def test_gps_coordinate(self):
+        s = GPSCoordinate(Identity())
+        self.assertEqual(s("45.5283694444 N"), 45.5283694444)
+        self.assertEqual(s("45.5283694444 S"), 45.5283694444)
+        self.assertEqual(s("119.3941638889 W"), -119.3941638889)
+        self.assertEqual(s("119.3941638889 E"), 119.3941638889)
+        with self.assertRaises(AssertionError):
+            s("45 deg 31' 42.13\" N")

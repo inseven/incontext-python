@@ -20,6 +20,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import re
+
 
 class TransformFailure(Exception):
     pass
@@ -67,6 +69,32 @@ class Empty(object):
 
     def __call__(self, data):
         raise Skip()
+
+
+class Identity(object):
+
+    def __call__(self, data):
+        return data
+
+
+GPS_COORDINATE_EXPRESSION = re.compile(r"^(\d+\.\d+) ([NSEW])$")
+
+
+class GPSCoordinate(object):
+
+    def __init__(self, transform):
+        self.transform = transform
+
+    def __call__(self, data):
+        data = self.transform(data)
+        match = GPS_COORDINATE_EXPRESSION.match(data)
+        if not match:
+            raise AssertionError(f"Invalid GPS coordinate '{data}'.")
+        value = float(match.group(1))
+        direction = match.group(2)
+        if direction == "W":
+            value = value * -1
+        return value
 
 
 class Dictionary(object):

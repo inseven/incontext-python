@@ -45,7 +45,7 @@ import converters
 import store
 import utils
 
-from schema import Default, Dictionary, Empty, First, Key
+from schema import Default, Dictionary, Empty, First, GPSCoordinate, Key
 
 
 PRIORITIZED_DATE_KEYS = [
@@ -75,8 +75,8 @@ METADATA_SCHEMA = Dictionary({
     "date": First(Key("DateTimeOriginal"), Key("ContentCreateDate"), Key("CreationDate"), Empty()),
     "projection": First(Key("ProjectionType"), Empty()),
     "location": First(Dictionary({
-        "latitude": Key("GPSLatitude"),
-        "longitude": Key("GPSLongitude"),
+        "latitude": GPSCoordinate(Key("GPSLatitude")),
+        "longitude": GPSCoordinate(Key("GPSLongitude")),
     }), Empty())
 
 })
@@ -174,16 +174,6 @@ def exif(path):
     for field in PRIORITIZED_DATE_KEYS:
         if field in data:
             data[field] = dateutil.parser.parse(data[field].replace(":", "-", 2))
-
-    for field in ["GPSLatitude", "GPSLongitude"]:
-        if field in data:
-            components = data[field].split(" ")
-            value = float(components[0])
-            if len(components) > 1:
-                direction = components[1]
-                if direction == "W":
-                    value = value * -1
-            data[field] = value
 
     return data
 
