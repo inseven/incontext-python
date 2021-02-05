@@ -68,6 +68,41 @@ IMAGEMAGICK_WHITELIST = [
     ".gif",
 ]
 
+METADATA_SCHEMA = Dictionary({
+
+    "title": First(Key("Title"), Key("DisplayName"), Key("ObjectName"), Empty()),
+    "content": First(Key("ImageDescription"), Key("Description"), Key("ArtworkContentDescription"), Default(None)),
+    "date": First(Key("DateTimeOriginal"), Key("ContentCreateDate"), Key("CreationDate"), Empty()),
+    "projection": First(Key("ProjectionType"), Empty()),
+    "location": First(Dictionary({
+        "latitude": Key("GPSLatitude"),
+        "longitude": Key("GPSLongitude"),
+    }), Empty())
+
+})
+
+DEFAULT_PROFILES = {
+    "image": {
+        "width": 1600,
+        "scale": 1
+    },
+    "thumbnail": {
+        "height": 240,
+        "scale": 2
+    },
+}
+
+EQUIRECTANGULAR_PROFILES = {
+    "image": {
+        "width": 10000,
+        "scale": 1
+    },
+    "thumbnail": {
+        "height": 240,
+        "scale": 2
+    },
+}
+
 
 class Exif(object):
 
@@ -353,42 +388,6 @@ def get_image_data(root, dirname, basename):
     with Image.open(os.path.join(root, dirname, basename)) as img:
         width, height = img.size
         return {"filename": basename, "width": width, "height": height}
-
-
-METADATA_SCHEMA = Dictionary({
-
-    "title": First(Key("Title"), Key("DisplayName"), Key("ObjectName"), Empty()),
-    "content": First(Key("ImageDescription"), Key("Description"), Key("ArtworkContentDescription"), Default(None)),
-    "date": First(Key("DateTimeOriginal"), Key("ContentCreateDate"), Key("CreationDate"), Empty()),
-    "projection": First(Key("ProjectionType"), Empty()),
-    "location": First(Dictionary({
-        "latitude": Key("GPSLatitude"),
-        "longitude": Key("GPSLongitude"),
-    }), Empty())
-
-})
-
-DEFAULT_PROFILES = {
-    "image": {
-        "width": 1600,
-        "scale": 1
-    },
-    "thumbnail": {
-        "height": 240,
-        "scale": 2
-    },
-}
-
-EQUIRECTANGULAR_PROFILES = {
-    "image": {
-        "width": 10000,
-        "scale": 1
-    },
-    "thumbnail": {
-        "height": 240,
-        "scale": 2
-    },
-}
 
 
 def metadata_for_media_file(root, path, title_from_filename):
