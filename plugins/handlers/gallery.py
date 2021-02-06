@@ -144,19 +144,6 @@ def load_image(path):
     return Image.open(path)
 
 
-def get_orientation(exif):
-    try:
-        exif = dict(exif.items())
-        for orientation in ExifTags.TAGS.keys():
-            if ExifTags.TAGS[orientation] == 'Orientation':
-                break
-        return exif[orientation]
-    except:
-        logging.debug("Unable to get get EXIF data")
-        pass
-    return 1
-
-
 def get_size(source, scale):
     with load_image(source) as img:
         width, height = img.size
