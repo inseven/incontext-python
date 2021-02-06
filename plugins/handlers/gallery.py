@@ -286,15 +286,15 @@ def safe_resize(source, destination, size):
 
     This makes use of `RESIZE_METHODS` to determine which resize handler to use.
     """
+
+
+
     resize_method = evaluate_tests(RESIZE_METHODS, os.path.basename(source))
     resize_method(source,
                   destination,
                   f"{size.width}x{size.height}")
 
 
-# TODO: Make the API for this much cleaner.
-# It should simply have a source and a destination.
-# TODO: Where should the destination extension be?
 def resize(source, dest_root, dest_dirname, dest_basename, size, scale):
 
     # Determine the desired output MIME type and extension.
@@ -303,13 +303,9 @@ def resize(source, dest_root, dest_dirname, dest_basename, size, scale):
     destination_extension = ext if destination_mime_type == "*" else mimetypes.guess_extension(destination_mime_type)
     dest_basename = f"{name}{destination_extension}"
 
-    # TODO: This is almost certainly inefficient.
-    # TODO: Perhaps this should be moved into the resize method?
     with load_image(source) as image:
         (source_width, source_height) = image.size
         logging.debug("Image source dimensions = %sx%s", source_width, source_height)
-
-        # TODO: Move this into a separate utility for testing.
 
         # Determine the target dimensions.
         source_ratio = source_width / source_height
