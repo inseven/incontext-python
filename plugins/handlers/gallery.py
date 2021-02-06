@@ -290,65 +290,6 @@ class Glob(Or):
         super().__init__(*tests)
 
 
-# TODO: Do I need a magic marker for format=InputFormat?
-
-# TODO: Perhaps this is a subclass of Output, so that things like tags can be passed?
-class Resize(object):
-
-    def __init__(self, size=None, format=None):
-        self.format = format
-        self.size = size
-
-
-class And(object):
-
-    def __init__(self, *matches):
-        self.matches = matches
-
-
-# TODO: Move this out for the time being.
-class Metadata(object):
-
-    def __init__(self, xpath):
-        self.xpath = xpath
-
-    def evaluate(self, path, image, metadata):
-        return True
-
-
-class Output(object):
-
-    def __init__(self, transform, tag=None):
-        self.transform = transform
-        self.tag = tag
-
-
-# Ors are achieved by a list of options.
-# Ands would be achieved by a list in the opposite direction?
-
-
-# TODO: How do I express the main image? Or is it sufficient to match on size?
-
-# TODO: Images should be able to be put into a namespace.
-# TODO: Perhaps it's better to put multiple images into namespaces?
-
-
-# TODO: This is unused; consider removing it for the time being.
-OPERATIONS = [
-
-    (Glob("*.jpeg"),
-        Resize(Size(1600, None))),
-    (Glob("*.heic"),
-        Resize(Size(1600, None), format="image/jpeg"), # TODO: Tags??
-        Resize(Size(800, None), format="image/jpeg")),
-    (And(Glob("*.jpeg"), Metadata("[Projection=equirectangular]")),
-        Resize(Size(1600, None))),
-    (Glob("*"),
-        Resize(Size(1600, None))),
-
-]
-
-
 RESIZE_METHODS = [
     (Glob("*.gif"), gifsicle_resize),
     (Glob("*"), imagemagick_resize),
@@ -381,8 +322,6 @@ def safe_resize(source, destination, size):
                   destination,
                   f"{size.width}x{size.height}")
 
-# TODO: Test GIF
-
 
 # TODO: Make the API for this much cleaner.
 # It should simply have a source and a destination.
@@ -394,8 +333,6 @@ def resize(source, dest_root, dest_dirname, dest_basename, size, scale):
     destination_mime_type = evaluate_tests(OUTPUT_MIME_TYPES, os.path.basename(source))
     destination_extension = ext if destination_mime_type == "*" else mimetypes.guess_extension(destination_mime_type)
     dest_basename = f"{name}{destination_extension}"
-
-    # TODO: Add a test for TIFF conversion.
 
     # TODO: This is almost certainly inefficient.
     # TODO: Perhaps this should be moved into the resize method?

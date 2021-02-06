@@ -108,3 +108,5 @@ class GalleryTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists(basename))
         output_size = gallery.get_size(basename, 1)
         self.assertEqual(output_size["width"], size[0])
+
+        # TODO: Test TIFF and GIF conversion
