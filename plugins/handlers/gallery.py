@@ -341,12 +341,6 @@ def generate_thumbnail(source, dest_root, dest_dirname, dest_basename, size, sou
     return resize(source, dest_root, dest_dirname, dest_basename, size, scale)
 
 
-def get_image_data(root, dirname, basename):
-    with Image.open(os.path.join(root, dirname, basename)) as img:
-        width, height = img.size
-        return {"filename": basename, "width": width, "height": height}
-
-
 def metadata_from_exif(path):
     """
     Generate a metadata dictionary from just the EXIF data contained within the file at `path`, as specified within
@@ -375,15 +369,14 @@ def process_image(incontext, root, destination, dirname, basename, category, tit
     metadata = metadata_for_media_file(root, os.path.join(dirname, basename),
                                        title_from_filename=title_from_filename)
 
+    # TODO: Support specifying image size sets in the configuration file #10
+
     # Determine which profiles to use; we use a different profile for equirectangular projections.
-    # TODO: In an ideal world we would allow all of this special case behaviour to be configured in site.yaml
-    #       so there are no custom modifications required to the script.
     profiles = DEFAULT_PROFILES
     if "projection" in metadata and metadata["projection"] == "equirectangular":
         profiles = EQUIRECTANGULAR_PROFILES
 
     # Generate the various different image sizes.
-    # TODO: Consider making this common code for all images.
     for profile_name, profile_details in profiles.items():
 
         filename = "%s-%s%s" % (identifier, profile_name.replace("_", "-"), ext)
