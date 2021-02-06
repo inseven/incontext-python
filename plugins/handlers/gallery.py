@@ -105,23 +105,6 @@ def generate_identifier(basename):
     return os.path.splitext(basename)[0]
 
 
-def load_metadata(path):
-
-    default = {"version": 0}
-    try:
-        fm = frontmatter.load(path)
-        dictionary = fm.metadata
-        try:
-            dictionary["content"] = fm.content
-        except AttributeError:
-            pass
-        return dictionary
-    except IOError:
-        return default
-    except ValueError:
-        return default
-
-
 def exif(path):
     data = json.loads(subprocess.check_output(["exiftool", "-j", "-c", "%.10f", path]).decode('utf-8'))[0]
 
@@ -296,7 +279,6 @@ RESIZE_METHODS = [
 ]
 
 
-# TODO: Move this into the user definition.
 OUTPUT_MIME_TYPES = [
     (Glob("*.heic"), "image/jpeg"),
     (Glob("*.tiff"), "image/jpeg"),
@@ -366,7 +348,7 @@ def resize(source, dest_root, dest_dirname, dest_basename, size, scale):
     return get_details(dest_root, dest_dirname, dest_basename, scale)
 
 
-# TODO: Remove this code.
+# TODO: Rename the generate_thumbnail method as it's misleading #45
 def generate_thumbnail(source, dest_root, dest_dirname, dest_basename, size, source_scale, scale):
     destination = os.path.join(dest_root, dest_dirname, dest_basename)
     return resize(source, dest_root, dest_dirname, dest_basename, size, scale)
