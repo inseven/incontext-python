@@ -16,16 +16,20 @@ RUN bash -c "cat docker/requirements.txt | xargs apt-get install -y"
 RUN ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime
 RUN dpkg-reconfigure --frontend noninteractive tzdata
 
+# Install ImageMagick
+WORKDIR ${INCONTEXT_DIR}/docker
+RUN bash install_imagemagick.sh
+
 # Unfortunately the ARM build of Ubuntu 20.04 doesn't seem to have a sufficiently up to date version of libhef, meaning
 # that the Python dependencies will fail to build. Instead, we download the source directly and compile it on both
 # ARM and Intel for consistency.
-WORKDIR /usr/local/src/
-RUN git clone https://github.com/strukturag/libheif.git --branch v1.9.1
-WORKDIR /usr/local/src/libheif
-RUN ./autogen.sh
-RUN ./configure
-RUN make
-RUN make install
+# WORKDIR /usr/local/src/
+# RUN git clone https://github.com/strukturag/libheif.git --branch v1.9.1
+# WORKDIR /usr/local/src/libheif
+# RUN ./autogen.sh
+# RUN ./configure
+# RUN make
+# RUN make install
 
 # Install the Python dependencies.
 WORKDIR ${INCONTEXT_DIR}/docker

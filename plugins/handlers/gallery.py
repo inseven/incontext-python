@@ -21,6 +21,7 @@
 import argparse
 import codecs
 import datetime
+import fnmatch
 import functools
 import glob
 import io
@@ -34,6 +35,7 @@ import subprocess
 import sys
 import time
 
+import braceexpand
 import dateutil
 import frontmatter
 import pyheif
@@ -47,18 +49,6 @@ import utils
 
 from schema import Default, Dictionary, Empty, EXIFDate, First, GPSCoordinate, Key
 
-
-EXTENSION_TO_FORMAT = {
-    ".png": "png",
-    ".jpg": "jpeg",
-    ".jpeg": "jpeg",
-    ".gif": "gif",
-    ".tiff": "tiff",
-}
-
-IMAGEMAGICK_WHITELIST = [
-    ".gif",
-]
 
 METADATA_SCHEMA = Dictionary({
 
@@ -217,7 +207,7 @@ def imagemagick_resize(source, destination, size):
                '-quality', '75',
                '-auto-orient',
                '-resize', size,
-               source,
+               source + "[0]",
                destination]
     try:
         logging.debug("Running command '%s'...", utils.safe_command(command))
@@ -253,37 +243,151 @@ def gifsicle_resize(source, destination, size):
         raise e
 
 
-IMAGE_RESIZE_HANDLERS = {
-    ".gif": gifsicle_resize
-}
+# TODO: Use this.
+class Size(object):
+
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
 
 
-def get_ext(path):
-    return os.path.splitext(path)[1].lower()
+class Regex(object):
+
+    def __init__(self, pattern, flags=0):
+        self.expression = re.compile(pattern, flags)
+
+    def evaluate(self, data):
+        return self.expression.match(data) is not None
 
 
+class Equal(object):
+
+    def __init__(self, value):
+        self.value = value
+
+    def evaluate(self, data):
+        return data == self.value
+
+
+class Or(object):
+
+    def __init__(self, *tests):
+        self.tests = tests
+
+    def evaluate(self, data):
+        for test in self.tests:
+            if test.evaluate(data):
+                return True
+        return False
+
+
+class Glob(Or):
+
+    def __init__(self, glob):
+        patterns = [fnmatch.translate(p) for p in braceexpand.braceexpand(glob)]
+        tests = [Regex(pattern, re.IGNORECASE) for pattern in patterns]
+        super().__init__(*tests)
+
+
+# TODO: Do I need a magic marker for format=InputFormat?
+
+# TODO: Perhaps this is a subclass of Output, so that things like tags can be passed?
+class Resize(object):
+
+    def __init__(self, size=None, format=None):
+        self.format = format
+        self.size = size
+
+
+class And(object):
+
+    def __init__(self, *matches):
+        self.matches = matches
+
+
+
+
+class Metadata(object):
+
+    def __init__(self, xpath):
+        self.xpath = xpath
+
+    def evaluate(self, path, image, metadata):
+        return True
+
+
+class Output(object):
+
+    def __init__(self, transform, tag=None):
+        self.transform = transform
+        self.tag = tag
+
+
+# Ors are achieved by a list of options.
+# Ands would be achieved by a list in the opposite direction?
+
+
+# TODO: How do I express the main image? Or is it sufficient to match on size?
+
+
+
+# TODO: Perhaps it's better to put multiple images into namespaces?
+
+# class MetadataXPath(object):
+#     pass
+
+OPERATIONS = [
+
+    (Glob("*.jpeg"),
+        Resize(Size(1600, None))),
+    (Glob("*.heic"),
+        Resize(Size(1600, None), format="image/jpeg"), # TODO: Tags??
+        Resize(Size(800, None), format="image/jpeg")),
+    (And(Glob("*.jpeg"), Metadata("[Projection=equirectangular]")),
+        Resize(Size(1600, None))),
+    (Glob("*"),
+        Resize(Size(1600, None))),
+
+]
+
+
+RESIZE_METHODS = [
+    (Glob("*.gif"), gifsicle_resize),
+    (Glob("*"), imagemagick_resize),
+]
+
+
+def safe_resize(source, destination, size):
+    basename = os.path.basename(source)
+    for test, resize_method in RESIZE_METHODS:
+        if test.evaluate(basename):
+            resize_method(source,
+                          destination,
+                          f"{size.width}x{size.height}")
+            return
+    raise AssertionError(f"Unable to find resize handler for '{basename}'.")
+
+
+# TODO: Make the API for this much cleaner.
+# It should simply have a source and a destination.
+# TODO: Where should the destination extension be?
 def resize(source, dest_root, dest_dirname, dest_basename, size, scale):
 
     # Unfortunately HEIC files are not broadly supported, so we always need to ensure these
     # are converted to JPEG files on the fly. We therefore fix-up the destination filename.
     (name, ext) = os.path.splitext(dest_basename)
-    if ext == ".heic":
+    # TODO: This is an unpleasant hack and would be much better represented as the output format.
+    if ext == ".heic" or ext == ".tiff":
         ext = ".jpeg"
     dest_basename = "".join([name, ext])
 
-    is_heic = get_ext(source) == ".heic"
-
+    # TODO: This is almost certainly inefficient.
+    # TODO: Perhaps this should be moved into the resize method?
     with load_image(source) as image:
-
-        # Get the exif from the image before performing any processing.
-        exif = None
-        try:
-            exif = image._getexif()
-        except:
-            pass
-
         (source_width, source_height) = image.size
         logging.debug("Image source dimensions = %sx%s", source_width, source_height)
+
+        # TODO: Move this into a separate utility for testing.
 
         # Determine the target dimensions.
         source_ratio = source_width / source_height
@@ -301,42 +405,15 @@ def resize(source, dest_root, dest_dirname, dest_basename, size, scale):
 
         logging.debug("Image target dimensions = %sx%s", destination_width, destination_height)
 
-        # Check to see if a resize is required.
-        should_resize = True
-        if source_width <= destination_width or source_height <= destination_height:
-            should_resize = False
-
-        # Perform the resize.
-        destination = os.path.join(dest_root, dest_dirname, dest_basename)
-        if should_resize:
-            image = image.resize((destination_width, destination_height), resample=Image.LANCZOS)
-
-        # Use ImageMagick's convert command if permitted as this can perform faster/better for some image types.
-        if ext in IMAGE_RESIZE_HANDLERS:
-            IMAGE_RESIZE_HANDLERS[ext](source,
-                                       os.path.join(dest_root, dest_dirname, dest_basename),
-                                       f"{destination_width}x{destination_height}")
-        else:
-            # Auto-orient the image (unless it's a heic file as apparently that doesn't need it).
-            if exif is not None and not is_heic:
-                orientation = get_orientation(exif)
-                logging.debug(f"EXIF orientation = {orientation}")
-                if orientation == 3:
-                    logging.debug("Correcting image orientation (rotate 180 degrees)")
-                    image = image.transpose(Image.ROTATE_180)
-                elif orientation == 6:
-                    logging.debug("Correcting image orientation (rotate 270 degrees)")
-                    image = image.transpose(Image.ROTATE_270)
-                elif orientation == 8:
-                    logging.debug("Correcting image orientation (rotate 90 degrees)")
-                    image = image.transpose(Image.ROTATE_90)
-
-            # Save the image.
-            image.save(destination, EXTENSION_TO_FORMAT[ext.lower()], quality=75)
+        safe_resize(source,
+                    os.path.join(dest_root, dest_dirname, dest_basename),
+                    Size(width=destination_width,
+                         height=destination_height))
 
     return get_details(dest_root, dest_dirname, dest_basename, scale)
 
 
+# TODO: Remove this code.
 def generate_thumbnail(source, dest_root, dest_dirname, dest_basename, size, source_scale, scale):
     destination = os.path.join(dest_root, dest_dirname, dest_basename)
     return resize(source, dest_root, dest_dirname, dest_basename, size, scale)
@@ -404,7 +481,10 @@ def process_image(incontext, root, destination, dirname, basename, category, tit
         source_scale = metadata["scale"] if metadata["scale"] is not None else 1
 
         # TODO: Rename generate_thumbnail.
-        metadata[profile_name] = generate_thumbnail(source_path, destination, dirname, filename, (width, height), source_scale, scale)
+        metadata[profile_name] = generate_thumbnail(source_path,
+                                                    destination, dirname, filename,
+                                                    (width, height),
+                                                    source_scale, scale)  # TODO: Why two scales?
 
     # Configure the page details.
     metadata["category"] = category
