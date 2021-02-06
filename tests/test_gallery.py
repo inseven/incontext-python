@@ -23,11 +23,15 @@
 import datetime
 import logging
 import os
+import tempfile
 import unittest
 import subprocess
 import sys
 
+import common
+
 import paths
+import utils
 
 sys.path.append(os.path.join(paths.PLUGINS_DIR, "handlers"))
 
@@ -74,30 +78,33 @@ class GalleryTestCase(unittest.TestCase):
         self.assertTrue(Glob("*.{jpeg,tiff}").evaluate("IMG_3875.jpeg"))
         self.assertTrue(Glob("*.{jpeg,tiff}").evaluate("IMG_3875.tiff"))
 
-    def test_get_size(self):
+    def test_evaluate_tests(self):
+        tests = [
+            (Glob("*.tiff"), "image/jpeg"),
+            (Glob("*"), "*"),
+        ]
+        self.assertEqual(gallery.evaluate_tests(tests, "IMG_3875.jpeg"), "*")
+        self.assertEqual(gallery.evaluate_tests(tests, "IMG_3875.tiff"), "image/jpeg")
 
-        # TODO: Use a temporary directory.
+    @common.with_temporary_directory
+    def test_resize_heic_with_format_change(self):
 
-        destination_root = os.getcwd()
-        destination_dirname = ""
-        destination_basename = os.path.basename(IMG_3870_HEIC)
+        basename = os.path.basename(IMG_3870_HEIC)
         size = (1600, None)
-        scale = 1
+        gallery.resize(IMG_3870_HEIC, os.getcwd(), "", basename, size, 1)
 
-        gallery.resize(IMG_3870_HEIC, destination_root, destination_dirname, destination_basename, size, scale)
-
-        name, ext = os.path.splitext(destination_basename)
-        expected_basename = f"{name}.jpeg"
+        expected_basename = utils.replace_extension(basename, ".jpg")
         self.assertTrue(os.path.exists(expected_basename))
-
         output_size = gallery.get_size(expected_basename, 1)
         self.assertEqual(output_size["width"], size[0])
 
-        # TODO: Check that the image has the correct size.
-        # TODO: Check that the image is the correct type (not sure quite how we do this)?
+    @common.with_temporary_directory
+    def test_resize_jpeg(self):
 
-        # subprocess.check_call(["mogrify", "--version"])
+        basename = os.path.basename(IMG_3870_JPEG)
+        size = (800, None)
+        gallery.resize(IMG_3870_JPEG, os.getcwd(), "", basename, size, 1)
 
-        # gallery.imagemagick_resize(IMG_3870_HEIC, "output.jpeg", "1600x1200")
-        # TODO: Assert that it created a file in the expected location.
-        # TODO: How do we check that the file is valid?
+        self.assertTrue(os.path.exists(basename))
+        output_size = gallery.get_size(basename, 1)
+        self.assertEqual(output_size["width"], size[0])

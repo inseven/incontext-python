@@ -27,6 +27,7 @@ import glob
 import io
 import json
 import logging
+import mimetypes
 import os
 import os.path
 import re
@@ -305,8 +306,7 @@ class And(object):
         self.matches = matches
 
 
-
-
+# TODO: Move this out for the time being.
 class Metadata(object):
 
     def __init__(self, xpath):
@@ -329,13 +329,11 @@ class Output(object):
 
 # TODO: How do I express the main image? Or is it sufficient to match on size?
 
-
-
+# TODO: Images should be able to be put into a namespace.
 # TODO: Perhaps it's better to put multiple images into namespaces?
 
-# class MetadataXPath(object):
-#     pass
 
+# TODO: This is unused; consider removing it for the time being.
 OPERATIONS = [
 
     (Glob("*.jpeg"),
@@ -357,15 +355,33 @@ RESIZE_METHODS = [
 ]
 
 
+# TODO: Move this into the user definition.
+OUTPUT_MIME_TYPES = [
+    (Glob("*.heic"), "image/jpeg"),
+    (Glob("*.tiff"), "image/jpeg"),
+    (Glob("*"), "*"),
+]
+
+
+def evaluate_tests(tests, data):
+    for test, result in tests:
+        if test.evaluate(data):
+            return result
+    raise KeyError(f"Failed to find match for '{data}'.")
+
+
 def safe_resize(source, destination, size):
-    basename = os.path.basename(source)
-    for test, resize_method in RESIZE_METHODS:
-        if test.evaluate(basename):
-            resize_method(source,
-                          destination,
-                          f"{size.width}x{size.height}")
-            return
-    raise AssertionError(f"Unable to find resize handler for '{basename}'.")
+    """
+    Determine a suitable resize handler to use when resizing (and converting an image) and run it.
+
+    This makes use of `RESIZE_METHODS` to determine which resize handler to use.
+    """
+    resize_method = evaluate_tests(RESIZE_METHODS, os.path.basename(source))
+    resize_method(source,
+                  destination,
+                  f"{size.width}x{size.height}")
+
+# TODO: Test GIF
 
 
 # TODO: Make the API for this much cleaner.
@@ -373,13 +389,13 @@ def safe_resize(source, destination, size):
 # TODO: Where should the destination extension be?
 def resize(source, dest_root, dest_dirname, dest_basename, size, scale):
 
-    # Unfortunately HEIC files are not broadly supported, so we always need to ensure these
-    # are converted to JPEG files on the fly. We therefore fix-up the destination filename.
-    (name, ext) = os.path.splitext(dest_basename)
-    # TODO: This is an unpleasant hack and would be much better represented as the output format.
-    if ext == ".heic" or ext == ".tiff":
-        ext = ".jpeg"
-    dest_basename = "".join([name, ext])
+    # Determine the desired output MIME type and extension.
+    name, ext = os.path.splitext(dest_basename)
+    destination_mime_type = evaluate_tests(OUTPUT_MIME_TYPES, os.path.basename(source))
+    destination_extension = ext if destination_mime_type == "*" else mimetypes.guess_extension(destination_mime_type)
+    dest_basename = f"{name}{destination_extension}"
+
+    # TODO: Add a test for TIFF conversion.
 
     # TODO: This is almost certainly inefficient.
     # TODO: Perhaps this should be moved into the resize method?
