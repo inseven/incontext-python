@@ -214,7 +214,6 @@ def gifsicle_resize(source, destination, size):
         raise e
 
 
-# TODO: Use this.
 class Size(object):
 
     def __init__(self, width, height):
