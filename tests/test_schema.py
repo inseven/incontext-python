@@ -105,6 +105,7 @@ class SchemaTestCase(unittest.TestCase):
         s = EXIFDate(Identity())
         self.assertEquals(s("2019:10:20 12:14:09.606-07:00"), dateutil.parser.parse("2019-10-20 12:14:09.606-07:00"))
         self.assertEquals(s("2019:09:10 09:04:30"), dateutil.parser.parse("2019-09-10 09:04:30"))
+        self.assertIsNone(First(s, Default(None))("0000:00:00 00:00:00"))
 
     def test_date_transform_with_first(self):
         s = First(EXIFDate(First(Key("date"), Key("secondary_date"))), Default(None))

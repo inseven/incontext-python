@@ -108,6 +108,11 @@ class EXIFDate(object):
         data = self.transform(data)
         # ExifTool makes the odd decision to separate the date components with a colon, meaning that `dateutil` cannot
         # parse it directly, so we fix it up.
+
+        # Skip zero dates.
+        if data == "0000:00:00 00:00:00":
+            raise TransformFailure()
+
         value = dateutil.parser.parse(data.replace(":", "-", 2))
         return value
 
