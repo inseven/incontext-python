@@ -21,11 +21,13 @@
 import argparse
 import codecs
 import datetime
+import fnmatch
 import functools
 import glob
 import io
 import json
 import logging
+import mimetypes
 import os
 import os.path
 import re
@@ -34,6 +36,7 @@ import subprocess
 import sys
 import time
 
+import braceexpand
 import dateutil
 import frontmatter
 import pyheif
@@ -47,18 +50,6 @@ import utils
 
 from schema import Default, Dictionary, Empty, EXIFDate, First, GPSCoordinate, Key
 
-
-EXTENSION_TO_FORMAT = {
-    ".png": "png",
-    ".jpg": "jpeg",
-    ".jpeg": "jpeg",
-    ".gif": "gif",
-    ".tiff": "tiff",
-}
-
-IMAGEMAGICK_WHITELIST = [
-    ".gif",
-]
 
 METADATA_SCHEMA = Dictionary({
 
@@ -114,23 +105,6 @@ def generate_identifier(basename):
     return os.path.splitext(basename)[0]
 
 
-def load_metadata(path):
-
-    default = {"version": 0}
-    try:
-        fm = frontmatter.load(path)
-        dictionary = fm.metadata
-        try:
-            dictionary["content"] = fm.content
-        except AttributeError:
-            pass
-        return dictionary
-    except IOError:
-        return default
-    except ValueError:
-        return default
-
-
 def exif(path):
     data = json.loads(subprocess.check_output(["exiftool", "-j", "-c", "%.10f", path]).decode('utf-8'))[0]
 
@@ -170,19 +144,6 @@ def load_image(path):
     return Image.open(path)
 
 
-def get_orientation(exif):
-    try:
-        exif = dict(exif.items())
-        for orientation in ExifTags.TAGS.keys():
-            if ExifTags.TAGS[orientation] == 'Orientation':
-                break
-        return exif[orientation]
-    except:
-        logging.debug("Unable to get get EXIF data")
-        pass
-    return 1
-
-
 def get_size(source, scale):
     with load_image(source) as img:
         width, height = img.size
@@ -217,7 +178,7 @@ def imagemagick_resize(source, destination, size):
                '-quality', '75',
                '-auto-orient',
                '-resize', size,
-               source,
+               source + "[0]",
                destination]
     try:
         logging.debug("Running command '%s'...", utils.safe_command(command))
@@ -253,35 +214,92 @@ def gifsicle_resize(source, destination, size):
         raise e
 
 
-IMAGE_RESIZE_HANDLERS = {
-    ".gif": gifsicle_resize
-}
+class Size(object):
+
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
 
 
-def get_ext(path):
-    return os.path.splitext(path)[1].lower()
+class Regex(object):
+
+    def __init__(self, pattern, flags=0):
+        self.expression = re.compile(pattern, flags)
+
+    def evaluate(self, data):
+        return self.expression.match(data) is not None
+
+
+class Equal(object):
+
+    def __init__(self, value):
+        self.value = value
+
+    def evaluate(self, data):
+        return data == self.value
+
+
+class Or(object):
+
+    def __init__(self, *tests):
+        self.tests = tests
+
+    def evaluate(self, data):
+        for test in self.tests:
+            if test.evaluate(data):
+                return True
+        return False
+
+
+class Glob(Or):
+
+    def __init__(self, glob):
+        patterns = [fnmatch.translate(p) for p in braceexpand.braceexpand(glob)]
+        tests = [Regex(pattern, re.IGNORECASE) for pattern in patterns]
+        super().__init__(*tests)
+
+
+RESIZE_METHODS = [
+    (Glob("*.gif"), gifsicle_resize),
+    (Glob("*"), imagemagick_resize),
+]
+
+
+OUTPUT_MIME_TYPES = [
+    (Glob("*.heic"), "image/jpeg"),
+    (Glob("*.tiff"), "image/jpeg"),
+    (Glob("*"), "*"),
+]
+
+
+def evaluate_tests(tests, data):
+    for test, result in tests:
+        if test.evaluate(data):
+            return result
+    raise KeyError(f"Failed to find match for '{data}'.")
+
+
+def safe_resize(source, destination, size):
+    """
+    Determine a suitable resize handler to use when resizing (and converting an image) and run it.
+
+    This makes use of `RESIZE_METHODS` to determine which resize handler to use.
+    """
+    resize_method = evaluate_tests(RESIZE_METHODS, os.path.basename(source))
+    resize_method(source,
+                  destination,
+                  f"{size.width}x{size.height}")
 
 
 def resize(source, dest_root, dest_dirname, dest_basename, size, scale):
 
-    # Unfortunately HEIC files are not broadly supported, so we always need to ensure these
-    # are converted to JPEG files on the fly. We therefore fix-up the destination filename.
-    (name, ext) = os.path.splitext(dest_basename)
-    if ext == ".heic":
-        ext = ".jpeg"
-    dest_basename = "".join([name, ext])
-
-    is_heic = get_ext(source) == ".heic"
+    # Determine the desired output MIME type and extension.
+    name, ext = os.path.splitext(dest_basename)
+    destination_mime_type = evaluate_tests(OUTPUT_MIME_TYPES, os.path.basename(source))
+    destination_extension = ext if destination_mime_type == "*" else mimetypes.guess_extension(destination_mime_type)
+    dest_basename = f"{name}{destination_extension}"
 
     with load_image(source) as image:
-
-        # Get the exif from the image before performing any processing.
-        exif = None
-        try:
-            exif = image._getexif()
-        except:
-            pass
-
         (source_width, source_height) = image.size
         logging.debug("Image source dimensions = %sx%s", source_width, source_height)
 
@@ -301,51 +319,18 @@ def resize(source, dest_root, dest_dirname, dest_basename, size, scale):
 
         logging.debug("Image target dimensions = %sx%s", destination_width, destination_height)
 
-        # Check to see if a resize is required.
-        should_resize = True
-        if source_width <= destination_width or source_height <= destination_height:
-            should_resize = False
-
-        # Perform the resize.
-        destination = os.path.join(dest_root, dest_dirname, dest_basename)
-        if should_resize:
-            image = image.resize((destination_width, destination_height), resample=Image.LANCZOS)
-
-        # Use ImageMagick's convert command if permitted as this can perform faster/better for some image types.
-        if ext in IMAGE_RESIZE_HANDLERS:
-            IMAGE_RESIZE_HANDLERS[ext](source,
-                                       os.path.join(dest_root, dest_dirname, dest_basename),
-                                       f"{destination_width}x{destination_height}")
-        else:
-            # Auto-orient the image (unless it's a heic file as apparently that doesn't need it).
-            if exif is not None and not is_heic:
-                orientation = get_orientation(exif)
-                logging.debug(f"EXIF orientation = {orientation}")
-                if orientation == 3:
-                    logging.debug("Correcting image orientation (rotate 180 degrees)")
-                    image = image.transpose(Image.ROTATE_180)
-                elif orientation == 6:
-                    logging.debug("Correcting image orientation (rotate 270 degrees)")
-                    image = image.transpose(Image.ROTATE_270)
-                elif orientation == 8:
-                    logging.debug("Correcting image orientation (rotate 90 degrees)")
-                    image = image.transpose(Image.ROTATE_90)
-
-            # Save the image.
-            image.save(destination, EXTENSION_TO_FORMAT[ext.lower()], quality=75)
+        safe_resize(source,
+                    os.path.join(dest_root, dest_dirname, dest_basename),
+                    Size(width=destination_width,
+                         height=destination_height))
 
     return get_details(dest_root, dest_dirname, dest_basename, scale)
 
 
+# TODO: Rename the generate_thumbnail method as it's misleading #45
 def generate_thumbnail(source, dest_root, dest_dirname, dest_basename, size, source_scale, scale):
     destination = os.path.join(dest_root, dest_dirname, dest_basename)
     return resize(source, dest_root, dest_dirname, dest_basename, size, scale)
-
-
-def get_image_data(root, dirname, basename):
-    with Image.open(os.path.join(root, dirname, basename)) as img:
-        width, height = img.size
-        return {"filename": basename, "width": width, "height": height}
 
 
 def metadata_from_exif(path):
@@ -376,15 +361,14 @@ def process_image(incontext, root, destination, dirname, basename, category, tit
     metadata = metadata_for_media_file(root, os.path.join(dirname, basename),
                                        title_from_filename=title_from_filename)
 
+    # TODO: Support specifying image size sets in the configuration file #10
+
     # Determine which profiles to use; we use a different profile for equirectangular projections.
-    # TODO: In an ideal world we would allow all of this special case behaviour to be configured in site.yaml
-    #       so there are no custom modifications required to the script.
     profiles = DEFAULT_PROFILES
     if "projection" in metadata and metadata["projection"] == "equirectangular":
         profiles = EQUIRECTANGULAR_PROFILES
 
     # Generate the various different image sizes.
-    # TODO: Consider making this common code for all images.
     for profile_name, profile_details in profiles.items():
 
         filename = "%s-%s%s" % (identifier, profile_name.replace("_", "-"), ext)
@@ -404,7 +388,10 @@ def process_image(incontext, root, destination, dirname, basename, category, tit
         source_scale = metadata["scale"] if metadata["scale"] is not None else 1
 
         # TODO: Rename generate_thumbnail.
-        metadata[profile_name] = generate_thumbnail(source_path, destination, dirname, filename, (width, height), source_scale, scale)
+        metadata[profile_name] = generate_thumbnail(source_path,
+                                                    destination, dirname, filename,
+                                                    (width, height),
+                                                    source_scale, scale)  # TODO: Why two scales?
 
     # Configure the page details.
     metadata["category"] = category

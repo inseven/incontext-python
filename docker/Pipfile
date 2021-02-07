@@ -3,9 +3,9 @@
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 
-
 [packages]
 
+braceexpand = "*"
 Flask = "*"
 Flask-misaka = "*"
 Jinja2 = "*"
@@ -14,14 +14,13 @@ misaka = "*"
 nose = "*"
 pdoc3 = "*"
 Pillow = "*"
-python-dateutil = ">=2.7"
 pyheif = "*"
+python-dateutil = ">=2.7"
 python-frontmatter = "*"
 pytz = "*"
 titlecase = "*"
-whatimage = "*"
 watchdog = "*"
-
+whatimage = "*"
 
 [requires]
 

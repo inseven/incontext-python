@@ -212,3 +212,8 @@ def create_animated_thumbnail(input, output):
                                "-layers", "OptimizeTransparency",
                                "-colors", "256",
                                output])
+
+
+def replace_extension(path, extension):
+    root, ext = os.path.splitext(path)
+    return root + extension

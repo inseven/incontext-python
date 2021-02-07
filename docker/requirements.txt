@@ -6,7 +6,6 @@ exiftool
 ffmpeg
 gifsicle
 git
-imagemagick
 libde265-dev
 libheif-dev
 libtool
