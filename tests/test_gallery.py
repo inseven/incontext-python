@@ -44,6 +44,7 @@ IMG_3857_HEIC = os.path.join(paths.TEST_DATA_DIRECTORY, "gallery/IMG_3857.heic")
 IMG_3864_JPEG = os.path.join(paths.TEST_DATA_DIRECTORY, "gallery/IMG_3864.jpeg")
 IMG_3870_HEIC = os.path.join(paths.TEST_DATA_DIRECTORY, "gallery/IMG_3870.heic")
 IMG_3870_JPEG = os.path.join(paths.TEST_DATA_DIRECTORY, "gallery/IMG_3870.jpeg")
+IMG_6218_TIFF = os.path.join(paths.TEST_DATA_DIRECTORY, "gallery/IMG_6218.tiff")
 
 
 class GalleryTestCase(unittest.TestCase):
@@ -92,6 +93,18 @@ class GalleryTestCase(unittest.TestCase):
         basename = os.path.basename(IMG_3870_HEIC)
         size = (1600, None)
         gallery.resize(IMG_3870_HEIC, os.getcwd(), "", basename, size, 1)
+
+        expected_basename = utils.replace_extension(basename, ".jpg")
+        self.assertTrue(os.path.exists(expected_basename))
+        output_size = gallery.get_size(expected_basename, 1)
+        self.assertEqual(output_size["width"], size[0])
+
+    @common.with_temporary_directory
+    def test_resize_tiff_with_format_change(self):
+
+        basename = os.path.basename(IMG_6218_TIFF)
+        size = (1600, None)
+        gallery.resize(IMG_6218_TIFF, os.getcwd(), "", basename, size, 1)
 
         expected_basename = utils.replace_extension(basename, ".jpg")
         self.assertTrue(os.path.exists(expected_basename))
