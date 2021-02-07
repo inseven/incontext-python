@@ -45,6 +45,7 @@ IMG_3864_JPEG = os.path.join(paths.TEST_DATA_DIRECTORY, "gallery/IMG_3864.jpeg")
 IMG_3870_HEIC = os.path.join(paths.TEST_DATA_DIRECTORY, "gallery/IMG_3870.heic")
 IMG_3870_JPEG = os.path.join(paths.TEST_DATA_DIRECTORY, "gallery/IMG_3870.jpeg")
 IMG_6218_TIFF = os.path.join(paths.TEST_DATA_DIRECTORY, "gallery/IMG_6218.tiff")
+PREVIEW_GIF = os.path.join(paths.TEST_DATA_DIRECTORY, "gallery/preview.gif")
 
 
 class GalleryTestCase(unittest.TestCase):
@@ -118,8 +119,20 @@ class GalleryTestCase(unittest.TestCase):
         size = (800, None)
         gallery.resize(IMG_3870_JPEG, os.getcwd(), "", basename, size, 1)
 
-        self.assertTrue(os.path.exists(basename))
+        self.assertTrue(os.path.exists(utils.replace_extension(basename, ".jpeg")))
         output_size = gallery.get_size(basename, 1)
         self.assertEqual(output_size["width"], size[0])
+
+    @common.with_temporary_directory
+    def test_resize_gif(self):
+
+        basename = os.path.basename(PREVIEW_GIF)
+        size = (200, None)
+        gallery.resize(PREVIEW_GIF, os.getcwd(), "", basename, size, 1)
+
+        self.assertTrue(os.path.exists(utils.replace_extension(basename, ".gif")))
+        output_size = gallery.get_size(basename, 1)
+        self.assertEqual(output_size["width"], size[0])
+
 
         # TODO: Test TIFF and GIF conversion
