@@ -286,9 +286,6 @@ def safe_resize(source, destination, size):
 
     This makes use of `RESIZE_METHODS` to determine which resize handler to use.
     """
-
-
-
     resize_method = evaluate_tests(RESIZE_METHODS, os.path.basename(source))
     resize_method(source,
                   destination,
