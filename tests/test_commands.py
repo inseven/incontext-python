@@ -42,22 +42,20 @@ class CommandsTestCase(unittest.TestCase):
             self.assertTrue(os.path.isdir(os.path.join(site.path, "templates")))
 
     def test_build_and_clean_empty_site(self):
-        configuration = {
-            "config": {
-                "title": "Example Site",
-                "url": "https://example.com"
-            },
-            "paths": {},
-            "build_steps": [
-                {
+        with common.TemporarySite(self) as site:
+            site.add("site.yaml", {
+                "config": {
+                    "title": "Example Site",
+                    "url": "https://example.com"
+                },
+                "paths": {},
+                "build_steps": [{
                     "task": "process_files",
                     "args": {
                         "handlers": [],
                     }
-                },
-            ],
-        }
-        with common.TemporarySite(self, configuration=configuration) as site:
+                }],
+            })
             site.assertNotExists("build")
             site.build()
             site.assertIsDir("build")
@@ -68,35 +66,30 @@ class CommandsTestCase(unittest.TestCase):
         with tempfile.TemporaryDirectory() as path:
             self.assertEqual(len(utils.find(path)), 0)
             common.run_incontext(["build-documentation", path], plugins_directory=paths.PLUGINS_DIR)
-            self.assertEqual(len(utils.find(path)), 30)
+            self.assertEqual(len(utils.find(path)), 32)
 
     def test_add_draft_and_publish_with_build(self):
-        configuration = {
-            "config": {
-                "title": "Example Site",
-                "url": "https://example.com"
-            },
-            "paths": {
-                "drafts": "content/drafts",
-                "posts": "content/posts",
-            },
-            "build_steps": [
-                {
+        with common.TemporarySite(self) as site:
+            site.add("site.yaml", {
+                "config": {
+                    "title": "Example Site",
+                    "url": "https://example.com"
+                },
+                "paths": {
+                    "drafts": "content/drafts",
+                    "posts": "content/posts",
+                },
+                "build_steps": [{
                     "task": "process_files",
                     "args": {
-                        "handlers": [
-                            {
-                                "when": "(.*/)?.*\.markdown",
-                                "then": "import_markdown",
-                            }
-                        ],
+                        "handlers": [{
+                            "when": "(.*/)?.*\.markdown",
+                            "then": "import_markdown",
+                        }],
                     }
-                },
-            ],
-        }
-        with common.TemporarySite(self, configuration=configuration) as site:
-            with open(os.path.join(site.path, "templates", "post.html"), "w") as fh:
-                fh.write("{{ page.title }}\n")
+                }],
+            })
+            site.add("templates/post.html", "{{ page.title }}\n")
             site.assertNotExists("build")
             site.run(["add", "draft", "Cheese is wonderful"])
             site.assertExists("content/drafts/cheese-is-wonderful/index.markdown")
@@ -112,27 +105,23 @@ class CommandsTestCase(unittest.TestCase):
             site.assertExists(f"build/files/posts/{today}-cheese-is-wonderful/index.html")
 
     def test_copy_file_regex_syntax(self):
-        configuration = {
-            "config": {
-                "title": "Example Site",
-                "url": "https://example.com"
-            },
-            "paths": {},
-            "build_steps": [
-                {
+        with common.TemporarySite(self) as site:
+            site.add("site.yaml", {
+                "config": {
+                    "title": "Example Site",
+                    "url": "https://example.com"
+                },
+                "paths": {},
+                "build_steps": [{
                     "task": "process_files",
                     "args": {
-                        "handlers": [
-                            {
-                                "when": "(.*/)?.*\.txt",
-                                "then": "copy_file",
-                            }
-                        ],
+                        "handlers": [{
+                            "when": "(.*/)?.*\.txt",
+                            "then": "copy_file",
+                        }],
                     }
-                },
-            ],
-        }
-        with common.TemporarySite(self, configuration=configuration) as site:
+                }],
+            })
             site.touch("content/foo.txt")
             site.touch("content/example.markdown")
             site.build()
@@ -140,30 +129,26 @@ class CommandsTestCase(unittest.TestCase):
             site.assertNotExists("build/files/example.markdown")
 
     def test_copy_file_multiple_regex_syntax(self):
-        configuration = {
-            "config": {
-                "title": "Example Site",
-                "url": "https://example.com"
-            },
-            "paths": {},
-            "build_steps": [
-                {
+        with common.TemporarySite(self) as site:
+            site.add("site.yaml", {
+                "config": {
+                    "title": "Example Site",
+                    "url": "https://example.com"
+                },
+                "paths": {},
+                "build_steps": [{
                     "task": "process_files",
                     "args": {
-                        "handlers": [
-                            {
-                                "when": [
-                                    ".*\.txt",
-                                    ".*\.jpeg",
-                                ],
-                                "then": "copy_file",
-                            }
-                        ],
+                        "handlers": [{
+                            "when": [
+                                ".*\.txt",
+                                ".*\.jpeg",
+                            ],
+                            "then": "copy_file",
+                        }],
                     }
-                },
-            ],
-        }
-        with common.TemporarySite(self, configuration=configuration) as site:
+                }],
+            })
             site.touch("content/foo.txt")
             site.touch("content/example.markdown")
             site.touch("content/image.jpeg")
@@ -173,35 +158,30 @@ class CommandsTestCase(unittest.TestCase):
             site.assertNotExists("build/files/example.markdown")
 
     def test_ignore(self):
-        configuration = {
-            "config": {
-                "title": "Example Site",
-                "url": "https://example.com"
-            },
-            "paths": {},
-            "build_steps": [
-                {
+        with common.TemporarySite(self) as site:
+            site.add("site.yaml", {
+                "config": {
+                    "title": "Example Site",
+                    "url": "https://example.com"
+                },
+                "paths": {},
+                "build_steps": [{
                     "task": "process_files",
                     "args": {
-                        "handlers": [
-                            {
-                                "when": [
-                                    ".*\.txt",
-                                ],
-                                "then": "ignore",
-                            },
-                            {
-                                "when": [
-                                    ".*\.txt",
-                                ],
-                                "then": "copy_file",
-                            }
-                        ],
+                        "handlers": [{
+                            "when": [
+                                ".*\.txt",
+                            ],
+                            "then": "ignore",
+                        }, {
+                            "when": [
+                                ".*\.txt",
+                            ],
+                            "then": "copy_file",
+                        }],
                     }
-                },
-            ],
-        }
-        with common.TemporarySite(self, configuration=configuration) as site:
+                }],
+            })
             site.touch("content/foo.txt")
             site.build()
             site.assertNotExists("build/files/foo.txt")
