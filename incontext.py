@@ -170,7 +170,6 @@ class InContext(object):
         @param plugins_directory: Path to the plugins directory.
         @type plugins_directory: str
         """
-        self.plugins_directory = os.path.abspath(plugins_directory)
         self.handlers = {}
         self.tasks = {}
         self.environment = {}
@@ -179,12 +178,6 @@ class InContext(object):
         self.configuration_providers = {}
         self.configuration = Configuration()
         self._plugins = _PLUGINS
-        """
-        Returns the registered plugins stored in a `_Plugins` instance.
-        """
-
-        # Load the plugins.
-        plugins = utils.load_plugins(self.plugins_directory)
 
         # Create the argument parser.
         self.parser = argparse.ArgumentParser(prog="incontext", description="Generate website.")
@@ -193,7 +186,14 @@ class InContext(object):
         self.parser.add_argument('--volume', action='append', help="mount an additional volume in the Docker container")
         self.subparsers = self.parser.add_subparsers(help="command to run")
 
-        # Initialize the plugins.
+        # Load and initialize the plugins.
+        self.load_plugins(os.path.abspath(plugins_directory))
+
+    def load_plugins(self, directory):
+        """
+        Load and initialize the plugins in a given directory, adding them to the incontext instance.
+        """
+        plugins = utils.load_plugins(directory)
         for plugin_name, plugin_instance in plugins.items():
 
             # Load the classic method-based plugins.
@@ -318,6 +318,10 @@ class InContext(object):
         Parse the command line arguments and execute the requested command.
         """
 
+        # TODO: Consider moving the plugin loading into here?
+        #       There may be some nuance in doing this as it might lead to over-loading if this
+        #       method is called more than once (which I think is intended).
+
         # Prepare the commands for running.
         for command_plugin in self._plugins.plugins(PLUGIN_TYPE_COMMAND).values():
             parser = self.subparsers.add_parser(command_plugin.name, help=command_plugin.help)
@@ -326,6 +330,15 @@ class InContext(object):
 
         # Parse the arguments.
         options = self.parser.parse_args(args)
+
+        # Once we've taken a first pass at processing the command line arguments, check to see if there's a site-local
+        # plugins directory that needs to be loaded.
+        plugins_directory = os.path.join(os.path.abspath(options.site), "plugins")
+        logging.info(plugins_directory)
+        if os.path.exists(plugins_directory):
+            logging.info("Loading site plugins...")
+            self.load_plugins(plugins_directory)
+
         for name, configuration_provider in self.configuration_providers.items():
             self.configuration.add(name, configuration_provider(self, options))
         if 'fn' not in options:
