@@ -221,13 +221,31 @@ def replace_extension(path, extension):
     root, ext = os.path.splitext(path)
     return root + extension
 
+
 def load_plugins(path):
+    """
+    Recursively load all the files ending in '.py' in the directory, `path`.
+
+    If this method is called more than once we ensure modules match those on disk by using importlib.reload if the
+    module is already loaded. This is to avoid aggressive caching causing problems (importlib.import_module will not
+    reload a module if it has changed on disk, or if it's path is different, so long as it has the same relative
+    identifier / module name).
+
+    This reload behaviour is required predominantly when under test, since the same instance can be used to run more
+    than one command across multiple sites. It may also be necessary in the future if we wish to script multiple
+    InContext commands.
+    """
     sys.path.append(path)
     plugins = {}
     for plugin in find_files(path, [".py"]):
         plugin = os.path.join(*plugin)
         (module, _) = os.path.splitext(os.path.relpath(plugin, path))
         module = module.replace("/", ".")
-        logging.debug("Importing '%s'...", module)
-        plugins[module] = importlib.import_module(module)
+        try:
+            importlib.reload(sys.modules[module])
+            logging.debug("Reloaded '%s'...", module)
+        except KeyError:
+            logging.debug("Importing '%s'...", module)
+            importlib.import_module(module)
+        plugins[module] = sys.modules[module]
     return plugins

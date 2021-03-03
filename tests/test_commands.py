@@ -186,6 +186,62 @@ class CommandsTestCase(unittest.TestCase):
             site.build()
             site.assertNotExists("build/files/foo.txt")
 
+    def test_loads_empty_site_plugin(self):
+        with common.TemporarySite(self) as site:
+            site.add("site.yaml", {
+                "config": {
+                    "title": "Example Site",
+                    "url": "https://example.com"
+                },
+                "paths": {},
+                "build_steps": [{
+                    "task": "process_files",
+                    "args": {
+                        "handlers": [{
+                            "when": "(.*/)?.*\.txt",
+                            "then": "copy_file",
+                        }],
+                    }
+                }],
+            })
+            site.makedirs("plugins")
+            site.add("plugins/example.py", """
+
+def initialize_plugin(incontext):
+    pass
+
+            """)
+            site.build()
+            # TODO: Check that the incontext instance has the plugin listed?
+
+    def test_fail_to_load_invalid_site_plugin(self):
+        with common.TemporarySite(self) as site:
+            site.add("site.yaml", {
+                "config": {
+                    "title": "Example Site",
+                    "url": "https://example.com"
+                },
+                "paths": {},
+                "build_steps": [{
+                    "task": "process_files",
+                    "args": {
+                        "handlers": [{
+                            "when": "(.*/)?.*\.txt",
+                            "then": "copy_file",
+                        }],
+                    }
+                }],
+            })
+            site.makedirs("plugins")
+            site.add("plugins/example.py", """
+
+def initialize_plugin(incontext):
+    raise AssertionError("Boom!")
+
+            """)
+            with self.assertRaises(AssertionError):
+                site.build()
+
     @common.with_temporary_directory
     def test_new_site(self):
         common.run_incontext(["new", "example"], plugins_directory=paths.PLUGINS_DIR)
