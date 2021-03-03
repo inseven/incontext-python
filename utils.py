@@ -18,13 +18,16 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import importlib
 import hashlib
+import logging
 import os
 import pathlib
 import re
 import shutil
 import struct
 import subprocess
+import sys
 import tempfile
 
 
@@ -217,3 +220,14 @@ def create_animated_thumbnail(input, output):
 def replace_extension(path, extension):
     root, ext = os.path.splitext(path)
     return root + extension
+
+def load_plugins(path):
+    sys.path.append(path)
+    plugins = {}
+    for plugin in find_files(path, [".py"]):
+        plugin = os.path.join(*plugin)
+        (module, _) = os.path.splitext(os.path.relpath(plugin, path))
+        module = module.replace("/", ".")
+        logging.debug("Importing '%s'...", module)
+        plugins[module] = importlib.import_module(module)
+    return plugins

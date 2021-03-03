@@ -23,7 +23,6 @@
 import argparse
 import collections
 import glob
-import importlib
 import logging
 import os
 import sys
@@ -185,14 +184,7 @@ class InContext(object):
         """
 
         # Load the plugins.
-        sys.path.append(self.plugins_directory)
-        plugins = {}
-        for plugin in utils.find_files(self.plugins_directory, [".py"]):
-            plugin = os.path.join(*plugin)
-            (module, _) = os.path.splitext(os.path.relpath(plugin, self.plugins_directory))
-            module = module.replace("/", ".")
-            logging.debug("Importing '%s'...", module)
-            plugins[module] = importlib.import_module(module)
+        plugins = utils.load_plugins(self.plugins_directory)
 
         # Create the argument parser.
         self.parser = argparse.ArgumentParser(prog="incontext", description="Generate website.")
