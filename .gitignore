@@ -6,3 +6,4 @@ Pipfile.lock
 __pycache__
 .nova
 .venv
+/plugins/custom

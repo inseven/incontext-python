@@ -8,6 +8,7 @@ gifsicle
 git
 libde265-dev
 libheif-dev
+libmagickwand-dev
 libtool
 pkg-config
 python3-dev
