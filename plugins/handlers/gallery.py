@@ -151,7 +151,6 @@ def exif(path):
     return data
 
 
-# TODO: Check if this is still required.
 def load_image(path):
     """
     Safe method for loading PIL.Image instances with additional support for HEIF files.
@@ -262,14 +261,12 @@ RESIZE_METHODS = [
 
 ]
 
-# TODO: Move this into the configuration loader?
 def parse_transform(transforms_lookup, transform):
     structure = expression.parse_method(transform)
     instance = expression.structure_to_instance(transforms_lookup, structure)
     return instance
 
 
-# TODO: Move this into the configuration loader?
 def parse_transforms(transforms_lookup, configuration):
     result = []
     for t in configuration:
@@ -299,7 +296,6 @@ def safe_resize(source, destination, size):
                   f"{size.width}x{size.height}")
 
 
-# TODO: Remove this.
 def resize_simple(source, destination, size):
     destination_root, destination_basename = os.path.split(destination)
     return resize(source, destination_root, "", destination_basename, size, 1)
