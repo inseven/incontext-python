@@ -47,6 +47,9 @@ class Site(object):
         with utils.Chdir(self.path):
             run_incontext(args, plugins_directory=paths.PLUGINS_DIR)
 
+    def incontext(self):
+        return incontext.InContext(plugins_directory=paths.PLUGINS_DIR)
+
     @property
     def store(self):
         if self._store is None:
@@ -58,6 +61,9 @@ class Site(object):
 
     def clean(self):
         self.run(["clean"])
+
+    def makedirs(self, path):
+        utils.makedirs(os.path.join(self.path, path))
 
     def touch(self, path):
         utils.touch(os.path.join(self.temporary_directory.name, path))
@@ -138,8 +144,8 @@ class TemporarySite(Site):
             self.add("site.yaml", self.configuration)
 
         # Create the required directories.
-        utils.makedirs(os.path.join(self.temporary_directory.name, "content"))
-        utils.makedirs(os.path.join(self.temporary_directory.name, "templates"))
+        self.makedirs("content")
+        self.makedirs("templates")
 
         os.chdir(self.temporary_directory.name)
         return self

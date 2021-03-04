@@ -22,6 +22,5 @@ RUN bash install_imagemagick.sh
 
 # Install the Python dependencies.
 WORKDIR ${INCONTEXT_DIR}/docker
-# COPY Pipfile ${INCONTEXT_DIR}/
 RUN python3 -m pip install pipenv
 RUN pipenv install --verbose --system --skip-lock
