@@ -194,15 +194,7 @@ class CommandsTestCase(unittest.TestCase):
                     "url": "https://example.com"
                 },
                 "paths": {},
-                "build_steps": [{
-                    "task": "process_files",
-                    "args": {
-                        "handlers": [{
-                            "when": "(.*/)?.*\.txt",
-                            "then": "copy_file",
-                        }],
-                    }
-                }],
+                "build_steps": [],
             })
             site.makedirs("plugins")
             site.add("plugins/example.py", """
@@ -210,9 +202,8 @@ class CommandsTestCase(unittest.TestCase):
 def initialize_plugin(incontext):
     pass
 
-            """)
+""")
             site.build()
-            # TODO: Check that the incontext instance has the plugin listed?
 
     def test_fail_to_load_invalid_site_plugin(self):
         with common.TemporarySite(self) as site:
@@ -222,15 +213,7 @@ def initialize_plugin(incontext):
                     "url": "https://example.com"
                 },
                 "paths": {},
-                "build_steps": [{
-                    "task": "process_files",
-                    "args": {
-                        "handlers": [{
-                            "when": "(.*/)?.*\.txt",
-                            "then": "copy_file",
-                        }],
-                    }
-                }],
+                "build_steps": [],
             })
             site.makedirs("plugins")
             site.add("plugins/example.py", """
@@ -238,9 +221,41 @@ def initialize_plugin(incontext):
 def initialize_plugin(incontext):
     raise AssertionError("Boom!")
 
-            """)
+""")
             with self.assertRaises(AssertionError):
                 site.build()
+
+    # TODO: Test the decorator-based API for registering commands from site-plugins #117
+    #       https://github.com/inseven/incontext/issues/117
+    def test_site_plugin_with_additional_command(self):
+        with common.TemporarySite(self) as site:
+            site.add("site.yaml", {
+                "config": {
+                    "title": "Example Site",
+                    "url": "https://example.com"
+                },
+                "paths": {},
+                "build_steps": [],
+            })
+            site.makedirs("plugins")
+            site.add("plugins/test_command.py", """
+
+import logging
+
+import incontext
+
+
+def initialize_plugin(incontext):
+    incontext.add_command("new-command", command_new_command)
+
+
+def command_new_command(incontext, parser):
+    def new_command(options):
+        logging.info("success!")
+    return new_command
+
+""")
+            site.run(["new-command"])
 
     @common.with_temporary_directory
     def test_new_site(self):

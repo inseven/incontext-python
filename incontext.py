@@ -22,6 +22,7 @@
 
 import argparse
 import collections
+import copy
 import glob
 import logging
 import os
@@ -176,7 +177,7 @@ class InContext(object):
         self.arguments = []
         self.configuration_providers = {}
         self.configuration = Configuration()
-        self._plugins = _PLUGINS
+        self._plugins = copy.deepcopy(_PLUGINS)
         self._loaded_plugin_directories = {}
 
         # Load and initialize the plugins.
