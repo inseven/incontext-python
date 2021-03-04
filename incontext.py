@@ -173,19 +173,11 @@ class InContext(object):
         self.handlers = {}
         self.tasks = {}
         self.environment = {}
-        self.parser = None
-        self.subparsers = []
+        self.arguments = []
         self.configuration_providers = {}
         self.configuration = Configuration()
         self._plugins = _PLUGINS
         self._loaded_plugin_directories = {}
-
-        # Create the argument parser.
-        self.parser = argparse.ArgumentParser(prog="incontext", description="Generate website.")
-        self.parser.add_argument('--site', '-s', default=os.getcwd(), help="path to the root of the site")
-        self.parser.add_argument('--verbose', '-v', action='store_true', default=False, help="show verbose output")
-        self.parser.add_argument('--volume', action='append', help="mount an additional volume in the Docker container")
-        self.subparsers = self.parser.add_subparsers(help="command to run")
 
         # Load and initialize the plugins.
         self.load_plugins(os.path.abspath(plugins_directory))
@@ -250,7 +242,7 @@ class InContext(object):
         Primarily intended to be used by configuration providers to allow them to specify a path to a configuration
         file, or configuration override.
         """
-        self.parser.add_argument(*args, **kwargs)
+        self.arguments.append(Argument(*args, **kwargs))
 
     def add_command(self, name, function, help=""):
         """
@@ -318,31 +310,57 @@ class InContext(object):
         """
         return self.handlers[name]
 
+    def parser(self, add_subparsers=True):
+        """
+        Return a parser, configured with the currently loaded plugins.
+        """
+        # Create the argument parser.
+        parser = argparse.ArgumentParser(prog="incontext", add_help=False, description="Generate website.")
+        parser.add_argument('--help', '-h', default=False, action='store_true', help="show this help message and exit")
+        parser.add_argument('--site', '-s', default=os.getcwd(), help="path to the root of the site")
+        parser.add_argument('--verbose', '-v', action='store_true', default=False, help="show verbose output")
+        parser.add_argument('--volume', action='append', help="mount an additional volume in the Docker container")
+
+        # Add the top-level arguments.
+        for argument in self.arguments:
+            parser.add_argument(*(argument.args), **(argument.kwargs))
+
+        # Prepare the commands for running (if requested).
+        if add_subparsers:
+            subparsers = parser.add_subparsers(help="command to run")
+            for command_plugin in self._plugins.plugins(PLUGIN_TYPE_COMMAND).values():
+                subparser = subparsers.add_parser(command_plugin.name, help=command_plugin.help)
+                fn = command_plugin.configure(self, subparser)
+                subparser.set_defaults(fn=fn)
+
+        return parser
+
     def run(self, args=None):
         """
         Parse the command line arguments and execute the requested command.
         """
 
-        # TODO: Consider moving the plugin loading into here?
-        #       There may be some nuance in doing this as it might lead to over-loading if this
-        #       method is called more than once (which I think is intended).
+        # Parse the top-level arguments, ignoring unknown arguments.
+        parser = self.parser(add_subparsers=False)
+        options, unknown = parser.parse_known_args(args)
 
-        # Prepare the commands for running.
-        for command_plugin in self._plugins.plugins(PLUGIN_TYPE_COMMAND).values():
-            parser = self.subparsers.add_parser(command_plugin.name, help=command_plugin.help)
-            fn = command_plugin.configure(self, parser)
-            parser.set_defaults(fn=fn)
-
-        # Parse the arguments.
-        options = self.parser.parse_args(args)
-
-        # Once we've taken a first pass at processing the command line arguments, check to see if there's a site-local
-        # plugins directory that needs to be loaded.
+        # Check to see if there are any site-local plugins.
         plugins_directory = os.path.join(os.path.abspath(options.site), "plugins")
         if os.path.exists(plugins_directory):
-            logging.info("Loading site plugins...")
+            logging.debug("Loading site plugins...")
             self.load_plugins(plugins_directory)
 
+        # Re-parse the arguments, along with the sub-commands / sub-parsers.
+        logging.debug("Re-processing arguments with sub-commands...")
+        parser = self.parser()
+        options = parser.parse_args(args)
+
+        # Explicit handling of the help functionality.
+        if options.help:
+            parser.print_help()
+            exit(1)
+
+        # Handle the arguments, running the command if specified.
         for name, configuration_provider in self.configuration_providers.items():
             self.configuration.add(name, configuration_provider(self, options))
         if 'fn' not in options:
