@@ -44,7 +44,7 @@ def get_files(path):
     for root, dirs, files in os.walk(path):
         result.extend(files)
     return result
-    
+
 
 def get_directory_sha(path):
     hash = hashlib.sha256()
@@ -53,8 +53,8 @@ def get_directory_sha(path):
         with open(os.path.join(path, f), 'rb') as fh:
             hash.update(fh.read())
     return hash.hexdigest()
-    
-    
+
+
 def unique_prefixes(paths):
     previous = None
     for path in sorted(paths):
@@ -62,8 +62,8 @@ def unique_prefixes(paths):
             continue
         previous = path
         yield previous
-        
-        
+
+
 def filter_paths(items):
     return [os.path.abspath(item) for item in items if os.path.exists(item)]
 
@@ -82,7 +82,7 @@ def main():
                 waiting = True
                 logging.info("Waiting for docker...")
             time.sleep(2)
-    
+
     # Check to see if we already have a suitable docker image; build one if not.
     # This generates a SHA for the docker directory and uses this as a tag to identify the required docker image.
     directory_sha = get_directory_sha(DOCKER_DIRECTORY)
@@ -104,18 +104,17 @@ def main():
     # Passing a path on the command line is treated as granting implicit permission to the container.
     cwd = os.getcwd()
     volumes = []
-    for volume in unique_prefixes(filter_paths(args) + [cwd]):  # N.B. The current working directory is an implicit mount.
+    for volume in unique_prefixes(filter_paths(args) + [cwd] + [ROOT]):  # N.B. The current working directory is an implicit mount.
         volumes.extend(["--volume", f"{volume}:{volume}"])
-    
-    # Construct the command.    
+
+    # Construct the command.
     command = (["docker", "run",
                 "--user", f"{os.getuid()}:{os.getgid()}",
-                "--workdir", cwd,
-                "--volume", f"{ROOT}:/usr/local/src/incontext"] +
+                "--workdir", cwd] +
                volumes +
-               [image_tag, "python3", "-u", "/usr/local/src/incontext/incontext.py"] +
+               [image_tag, "python3", "-u", os.path.join(ROOT, "incontext.py")] +
                args)
-               
+
     # Run incontext in docker.
     logging.debug("Running command %s.", command)
     result = subprocess.run(command)

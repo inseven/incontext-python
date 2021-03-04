@@ -178,6 +178,7 @@ class InContext(object):
         self.configuration_providers = {}
         self.configuration = Configuration()
         self._plugins = _PLUGINS
+        self._loaded_plugin_directories = {}
 
         # Create the argument parser.
         self.parser = argparse.ArgumentParser(prog="incontext", description="Generate website.")
@@ -193,6 +194,10 @@ class InContext(object):
         """
         Load and initialize the plugins in a given directory, adding them to the incontext instance.
         """
+        directory = os.path.abspath(directory)
+        if directory in self._loaded_plugin_directories:
+            return
+        self._loaded_plugin_directories[directory] = True
         plugins = utils.load_plugins(directory)
         for plugin_name, plugin_instance in plugins.items():
 
@@ -334,7 +339,6 @@ class InContext(object):
         # Once we've taken a first pass at processing the command line arguments, check to see if there's a site-local
         # plugins directory that needs to be loaded.
         plugins_directory = os.path.join(os.path.abspath(options.site), "plugins")
-        logging.info(plugins_directory)
         if os.path.exists(plugins_directory):
             logging.info("Loading site plugins...")
             self.load_plugins(plugins_directory)
