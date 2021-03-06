@@ -160,6 +160,8 @@ class Site(object):
         except KeyError:
             return None
 
+    # TODO: Dependencies are not tracked for included image files.
+
     def __getitem__(self, key):
         return self.config[key]
 
@@ -483,9 +485,8 @@ def fixup_relative_image_url(url, page_path):
     o = urllib.parse.urlparse(url)
     if o.scheme == '' and o.netloc == '' and not o.path.startswith('/') and not url.startswith('#'):
         path = os.path.join(os.path.dirname(page_path), o.path)
-        dirname, basename = os.path.split(o.path)
-        name, extension = os.path.splitext(basename)
-        return os.path.join(dirname, name, "large" + extension)
+        image = app.jinja_env.store.getall(path=path)[0]
+        return image["image"]["url"]
     return url
 
 

@@ -558,7 +558,7 @@ class GalleryTestCase(unittest.TestCase):
             site.assertExists("build/files/gallery/image/image.jpeg")
             site.assertExists("build/files/gallery/image/thumbnail.jpeg")
             site.assertExists("build/files/gallery/index.html")
-            site.assertFileContents("build/files/gallery/index.html", '<p><img src="/gallery/image/image.jpeg" srcset></p>')
+            site.assertFileContents("build/files/gallery/index.html", '<p><img src="/gallery/image/image.jpeg" srcset></p>\n')
 
     def test_relative_markdown_image_rewrite(self):
         with common.TemporarySite(self) as site:
@@ -574,9 +574,14 @@ class GalleryTestCase(unittest.TestCase):
             site.assertExists("build/files/gallery/image/image.jpeg")
             site.assertExists("build/files/gallery/image/thumbnail.jpeg")
             site.assertExists("build/files/gallery/index.html")
-            site.assertFileContents("build/files/gallery/index.html", '<p><img src="/gallery/image/image.jpeg" srcset></p>')
+            site.assertFileContents("build/files/gallery/index.html", '<p><img src="/gallery/image/image.jpeg"></p>\n')
 
 
+# TODO: Check that images that don't exist don't break renders (in both regular tags and todos)
+# TODO: Test that thumbnails have been created
+# TODO: Test the srcsets
+# TODO: Test that absolute path image URLs are not incorrectly fixed up
+# TODO: Test that full URLs are not fixed up
 # TODO: Test multiple images in a custom profile
 # TODO: Test custom handler plugins
 # TODO: Add end-to-end tests for metadata filtering
