@@ -560,6 +560,21 @@ class GalleryTestCase(unittest.TestCase):
             site.assertExists("build/files/gallery/index.html")
             site.assertFileContents("build/files/gallery/index.html", '<p><img src="/gallery/image/image.jpeg" srcset></p>\n')
 
+    def test_relative_picture_source_srcset_rewrite(self):
+        with common.TemporarySite(self) as site:
+            site.add("site.yaml", SITE_CONFIGURATION_WITH_COMMON_HANDLERS)
+            site.add("templates/photo.html", '{{ page.title }}')
+            site.add("templates/post.html", '{{ page.html | safe }}')
+            site.makedirs("content/gallery")
+            site.copy(IMG_3864_JPEG, "content/gallery/image.jpeg")
+            site.add("content/gallery/index.markdown", '<picture><source srcset="image.jpeg" media="(prefers-color-scheme: dark)" /><source srcset="image.jpeg" media="(prefers-color-scheme: light), (prefers-color-scheme: no-preference)" /><img src="image.jpeg" loading="lazy" /></picture>')
+            site.build()
+            site.assertExists("build/files/gallery/image/index.html")
+            site.assertExists("build/files/gallery/image/image.jpeg")
+            site.assertExists("build/files/gallery/image/thumbnail.jpeg")
+            site.assertExists("build/files/gallery/index.html")
+            site.assertFileContents("build/files/gallery/index.html", '<p><picture><source srcset="/gallery/image/image.jpeg" media="(prefers-color-scheme: dark)"></source><source srcset="/gallery/image/image.jpeg" media="(prefers-color-scheme: light), (prefers-color-scheme: no-preference)"></source><img src="/gallery/image/image.jpeg" loading="lazy" srcset></picture></p>\n')
+
     def test_relative_markdown_image_rewrite(self):
         with common.TemporarySite(self) as site:
             site.add("site.yaml", SITE_CONFIGURATION_WITH_COMMON_HANDLERS)
@@ -575,7 +590,6 @@ class GalleryTestCase(unittest.TestCase):
             site.assertExists("build/files/gallery/image/thumbnail.jpeg")
             site.assertExists("build/files/gallery/index.html")
             site.assertFileContents("build/files/gallery/index.html", '<p><img src="/gallery/image/image.jpeg"></p>\n')
-
 
 # TODO: Check that images that don't exist don't break renders (in both regular tags and todos)
 # TODO: Test that thumbnails have been created
