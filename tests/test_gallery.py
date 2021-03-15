@@ -593,7 +593,6 @@ class GalleryTestCase(unittest.TestCase):
 
 # TODO: Check that images that don't exist don't break renders (in both regular tags and todos)
 # TODO: Test that thumbnails have been created
-# TODO: Test the srcsets
 # TODO: Test that absolute path image URLs are not incorrectly fixed up
 # TODO: Test that full URLs are not fixed up
 # TODO: Test multiple images in a custom profile
