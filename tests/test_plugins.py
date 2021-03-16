@@ -43,6 +43,7 @@ class PluginsTestCase(unittest.TestCase):
                              "clean",
                              "new",
                              "publish",
+                                 "serve",
                              "tests",
                              "watch",
                          })

@@ -20,15 +20,23 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import argparse
+import functools
 import hashlib
 import logging
+import operator
 import os
+import signal
 import subprocess
 import sys
 import time
 
+import cli
+import utils
+
 ROOT = os.path.dirname(os.path.abspath(__file__))
 DOCKER_DIRECTORY = os.path.join(ROOT, "docker")
+PREFLIGHT_PLUGIN_DIRECTORY = os.path.join(ROOT, "preflight")
 
 DOCKERFILE = os.path.join(DOCKER_DIRECTORY, "Dockerfile")
 
@@ -37,6 +45,29 @@ DOCKER_IMAGE_NAME = "incontext-docker"
 
 verbose = '--verbose' in sys.argv[1:] or '-v' in sys.argv[1:]
 logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO, format="[%(levelname)s] %(message)s")
+
+
+class NotFound(Exception):
+    pass
+
+
+class Docker(object):
+
+    def __init__(self):
+        self.ports = []
+
+    def add_port(self, port):
+        self.ports.append(port)
+
+    @property
+    def arguments(self):
+        arguments = [["--publish", f"{port}:{port}"] for port in self.ports]
+        return functools.reduce(operator.concat, arguments, [])
+
+
+def signal_handler(sig, frame):
+    # Ignore the cancel signal as this should be handled by the guest.
+    pass
 
 
 def get_files(path):
@@ -68,7 +99,32 @@ def filter_paths(items):
     return [os.path.abspath(item) for item in items if os.path.exists(item)]
 
 
+def first_index(items, where):
+    try:
+        return next(index for (index, item) in enumerate(items) if where(item))
+    except StopIteration:
+        raise NotFound()
+
+
 def main():
+
+    # Proxy object for the docker configuration.
+    docker = Docker()
+
+    # Load preflight plugins.
+    plugins = utils.load_plugins(PREFLIGHT_PLUGIN_DIRECTORY)
+
+    # Process the arguments and perform any pre-flight operations to add docker arguments.
+    parser = cli.parser()
+    options, command_args = parser.parse_known_args()
+    if command_args:
+        command = command_args[0]
+        command_args = command_args[1:]
+        if command in cli.PREFLIGHT_PLUGINS:
+            logging.debug("Running '%s' preflight...", command)
+            cli.PREFLIGHT_PLUGINS[command].perform_preflight(docker, command_args)
+
+    # Get the unfiltered arguments
     args = sys.argv[1:]
 
     # Wait for docker to start up to handle situations where we've been launched before docker is running (e.g. system startup).
@@ -102,18 +158,22 @@ def main():
     # These will be mounted as volumes when running Docker Compose to ensure the instance of incontext running
     # in the container has access to the necessary files.
     # Passing a path on the command line is treated as granting implicit permission to the container.
-    cwd = os.getcwd()
+    site = os.path.abspath(options.site)
     volumes = []
-    for volume in unique_prefixes(filter_paths(args) + [cwd] + [ROOT]):  # N.B. The current working directory is an implicit mount.
+    for volume in unique_prefixes(filter_paths(args) + [site] + [ROOT]):  # N.B. The current working directory is an implicit mount.
         volumes.extend(["--volume", f"{volume}:{volume}"])
 
     # Construct the command.
     command = (["docker", "run",
                 "--user", f"{os.getuid()}:{os.getgid()}",
-                "--workdir", cwd] +
+                "--workdir", site] +
                volumes +
+               docker.arguments +
                [image_tag, "python3", "-u", os.path.join(ROOT, "incontext.py")] +
                args)
+
+    # Install a signal handler to allow the container to handle SIGINT.
+    signal.signal(signal.SIGINT, signal_handler)
 
     # Run incontext in docker.
     logging.debug("Running command %s.", command)

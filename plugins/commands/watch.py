@@ -19,6 +19,7 @@
 # SOFTWARE.
 
 import atexit
+import http.server
 import logging
 import os
 import signal
@@ -33,7 +34,9 @@ import watchdog.events
 import watchdog.observers
 
 import incontext
+import cli
 import paths
+import utils
 
 
 class CallbackEventHandler(watchdog.events.FileSystemEventHandler):
@@ -107,21 +110,60 @@ def docker(command):
     return subprocess.run(prefix + ["docker"] + command)
 
 
+class WatchingBuilder(object):
+
+    def __init__(self, incontext):
+        self.incontext = incontext
+
+    def start(self):
+        self.builder = Builder(self.incontext)
+        self.builder.start()
+        logging.info("Watching directory...")
+        self.observer = watch_directory([self.incontext.configuration.site.paths.content,
+                                         self.incontext.configuration.site.paths.templates],
+                                        self.builder.schedule)
+        logging.info("Performing initial build...")
+        self.builder.schedule()
+
+    def stop(self):
+        self.builder.stop()
+        self.observer.stop()
+        self.observer.join()
+        self.builder.join()
+
+
 @incontext.command("watch", help="watch for changes and automatically build the website")
 def command_watch(incontext, options):
-    builder = Builder(incontext)
+    builder = WatchingBuilder(incontext)
     builder.start()
-    logging.info("Watching directory...")
-    observer = watch_directory([incontext.configuration.site.paths.content,
-                                incontext.configuration.site.paths.templates],
-                               builder.schedule)
-    logging.info("Performing initial build...")
-    builder.schedule()
     try:
         while True:
             time.sleep(0.2)
     except KeyboardInterrupt:
         builder.stop()
-        observer.stop()
-    observer.join()
-    builder.join()
+
+
+@incontext.command("serve", help="run a local web server for development", arguments=[
+    cli.Argument("--port", "-p",
+                 type=int, default=8000,
+                 help="destination of the new site"),
+    cli.Argument("--watch",
+                 action="store_true", default=False,
+                 help="watch for changes and rebuild automatically")
+])
+def command_serve(incontext, options):
+
+    builder = None
+    if options.watch:
+        builder = WatchingBuilder(incontext)
+        builder.start()
+
+    with utils.Chdir(incontext.configuration.site.destination.files_directory):
+        httpd = http.server.HTTPServer(('', options.port),
+                                       http.server.SimpleHTTPRequestHandler)
+        logging.info("Listening on %s...", options.port)
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            if builder is not None:
+                builder.stop()
