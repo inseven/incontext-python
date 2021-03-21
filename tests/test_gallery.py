@@ -70,6 +70,30 @@ SITE_CONFIGURATION_WITH_IMAGE_HANDLER = {
 }
 
 
+SITE_CONFIGURATION_WITH_COMMON_HANDLERS = {
+    "config": {
+        "title": "Example Site",
+        "url": "https://example.com",
+    },
+    "paths": [],
+    "build_steps": [{
+        "task": "process_files",
+        "args": {
+            "handlers": [{
+                "when": '.*\.(jpeg|jpg|png|tiff|)',
+                "then": "import_photo",
+                "args": {
+                    "category": "photos",
+                }
+            }, {
+                "when": "(.*/)?.*\.markdown",
+                "then": "import_markdown",
+            }]
+        }
+    }]
+}
+
+
 class GalleryTestCase(unittest.TestCase):
 
     def test_regex(self):
@@ -521,7 +545,56 @@ class GalleryTestCase(unittest.TestCase):
             site.assertExists("build/files/image/index.html")
             site.assertFileContents("build/files/image/index.html", "Theophany")
 
+    def test_relative_img_src_rewrite(self):
+        with common.TemporarySite(self) as site:
+            site.add("site.yaml", SITE_CONFIGURATION_WITH_COMMON_HANDLERS)
+            site.add("templates/photo.html", '{{ page.title }}')
+            site.add("templates/post.html", '{{ page.html | safe }}')
+            site.makedirs("content/gallery")
+            site.copy(IMG_3864_JPEG, "content/gallery/image.jpeg")
+            site.add("content/gallery/index.markdown", '<img src="image.jpeg">')
+            site.build()
+            site.assertExists("build/files/gallery/image/index.html")
+            site.assertExists("build/files/gallery/image/image.jpeg")
+            site.assertExists("build/files/gallery/image/thumbnail.jpeg")
+            site.assertExists("build/files/gallery/index.html")
+            site.assertFileContents("build/files/gallery/index.html", '<p><img src="/gallery/image/image.jpeg" srcset></p>\n')
 
+    def test_relative_picture_source_srcset_rewrite(self):
+        with common.TemporarySite(self) as site:
+            site.add("site.yaml", SITE_CONFIGURATION_WITH_COMMON_HANDLERS)
+            site.add("templates/photo.html", '{{ page.title }}')
+            site.add("templates/post.html", '{{ page.html | safe }}')
+            site.makedirs("content/gallery")
+            site.copy(IMG_3864_JPEG, "content/gallery/image.jpeg")
+            site.add("content/gallery/index.markdown", '<picture><source srcset="image.jpeg" media="(prefers-color-scheme: dark)" /><source srcset="image.jpeg" media="(prefers-color-scheme: light), (prefers-color-scheme: no-preference)" /><img src="image.jpeg" loading="lazy" /></picture>')
+            site.build()
+            site.assertExists("build/files/gallery/image/index.html")
+            site.assertExists("build/files/gallery/image/image.jpeg")
+            site.assertExists("build/files/gallery/image/thumbnail.jpeg")
+            site.assertExists("build/files/gallery/index.html")
+            site.assertFileContents("build/files/gallery/index.html", '<p><picture><source srcset="/gallery/image/image.jpeg" media="(prefers-color-scheme: dark)"></source><source srcset="/gallery/image/image.jpeg" media="(prefers-color-scheme: light), (prefers-color-scheme: no-preference)"></source><img src="/gallery/image/image.jpeg" loading="lazy" srcset></picture></p>\n')
+
+    def test_relative_markdown_image_rewrite(self):
+        with common.TemporarySite(self) as site:
+            site.add("site.yaml", SITE_CONFIGURATION_WITH_COMMON_HANDLERS)
+            site.add("templates/photo.html", '{{ page.title }}')
+            site.add("templates/post.html", '{{ page.html | safe }}')
+            site.add("templates/image.html", '<img src="{{ image.image.url }}">')
+            site.makedirs("content/gallery")
+            site.copy(IMG_3864_JPEG, "content/gallery/image.jpeg")
+            site.add("content/gallery/index.markdown", '![](image.jpeg)')
+            site.build()
+            site.assertExists("build/files/gallery/image/index.html")
+            site.assertExists("build/files/gallery/image/image.jpeg")
+            site.assertExists("build/files/gallery/image/thumbnail.jpeg")
+            site.assertExists("build/files/gallery/index.html")
+            site.assertFileContents("build/files/gallery/index.html", '<p><img src="/gallery/image/image.jpeg"></p>\n')
+
+# TODO: Check that images that don't exist don't break renders (in both regular tags and todos)
+# TODO: Test that thumbnails have been created
+# TODO: Test that absolute path image URLs are not incorrectly fixed up
+# TODO: Test that full URLs are not fixed up
 # TODO: Test multiple images in a custom profile
 # TODO: Test custom handler plugins
 # TODO: Add end-to-end tests for metadata filtering

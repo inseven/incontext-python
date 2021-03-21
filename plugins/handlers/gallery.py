@@ -55,13 +55,13 @@ DEFAULT_CONFIGURATION = {
             "where": "glob('*.{heic,tiff}')",
             "transforms": [
                 "resize('image', width=1600, format='image/jpeg', sets=['image', 'previews'])",
-                "resize('thumbnail', width=480, format='image/jpeg', sets=['image', 'previews'])",
+                "resize('thumbnail', width=480, format='image/jpeg', sets=['thumbnail', 'previews'])",
             ],
         }, {
             "where": "glob('*')",
             "transforms": [
                 "resize('image', width=1600, sets=['image', 'previews'])",
-                "resize('thumbnail', width=480, sets=['image', 'previews'])",
+                "resize('thumbnail', width=480, sets=['thumbnail', 'previews'])",
             ],
         }],
     },

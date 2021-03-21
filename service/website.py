@@ -160,6 +160,8 @@ class Site(object):
         except KeyError:
             return None
 
+    # TODO: Dependencies are not tracked for included image files.
+
     def __getitem__(self, key):
         return self.config[key]
 
@@ -470,13 +472,22 @@ def fixup_relative_url(url, page_path):
     return url
 
 
-def fixup_relative_srcset(srcset, page_path):
+def fixup_relative_image_srcset(srcset, page_path):
     if srcset is None:
         return None
     srcs = [re.split("\s+", src) for src in re.split('\s*,\s*', srcset)]
     for src in srcs:
-        src[0] = fixup_relative_url(src[0], page_path)
+        src[0] = fixup_relative_image_url(src[0], page_path)
     return ", ".join([" ".join(src) for src in srcs])
+
+
+def fixup_relative_image_url(url, page_path):
+    o = urllib.parse.urlparse(url)
+    if o.scheme == '' and o.netloc == '' and not o.path.startswith('/') and not url.startswith('#'):
+        path = os.path.join(os.path.dirname(page_path), o.path)
+        image = app.jinja_env.store.getall(path=path)[0]
+        return image["image"]["url"]
+    return url
 
 
 def markdown(page):
@@ -513,8 +524,11 @@ def markdown(page):
                 parent.insert(parent.index(image) + 1, replacement_image)
                 parent.remove(image)
             else:
-                image.set('src', fixup_relative_url(src, page["path"]))
-                image.set('srcset', fixup_relative_srcset(image.get('srcset'), page["path"]))
+                image.set('src', fixup_relative_image_url(src, page["path"]))
+                image.set('srcset', fixup_relative_image_srcset(image.get('srcset'), page["path"]))
+        for source in document.xpath("//picture/source"):
+            srcset = source.get('srcset')
+            source.set('srcset', fixup_relative_image_url(srcset, page["path"]))
         for anchor in document.xpath("//a"):
             anchor.set('href', fixup_relative_url(anchor.get('href'), page["path"]))
         results = lxml.html.tostring(document, method='html', encoding='unicode')
