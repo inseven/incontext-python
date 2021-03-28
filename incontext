@@ -108,7 +108,9 @@ def main():
         volumes.extend(["--volume", f"{volume}:{volume}"])
 
     options = []
-    if sys.flags.interactive:
+    # Determine whether we're in interactive mode.
+    # https://stackoverflow.com/questions/2356399/tell-if-python-is-in-interactive-mode
+    if hasattr(sys, 'ps1'):
         options.append("--tty")
         options.append("--interactive")
 
