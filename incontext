@@ -107,12 +107,17 @@ def main():
     for volume in unique_prefixes(filter_paths(args) + [cwd] + [ROOT]):  # N.B. The current working directory is an implicit mount.
         volumes.extend(["--volume", f"{volume}:{volume}"])
 
+    options = []
+    if sys.flags.interactive:
+        options.append("--tty")
+        options.append("--interactive")
+
     # Construct the command.
     command = (["docker", "run",
                 "--tty",
-                "--interactive",
                 "--user", f"{os.getuid()}:{os.getgid()}",
                 "--workdir", cwd] +
+               options +
                volumes +
                [image_tag, "python3", "-u", os.path.join(ROOT, "incontext.py")] +
                args)
