@@ -109,6 +109,8 @@ def main():
 
     # Construct the command.
     command = (["docker", "run",
+                "--tty",
+                "--interactive",
                 "--user", f"{os.getuid()}:{os.getgid()}",
                 "--workdir", cwd] +
                volumes +
