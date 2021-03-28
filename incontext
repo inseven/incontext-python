@@ -107,10 +107,19 @@ def main():
     for volume in unique_prefixes(filter_paths(args) + [cwd] + [ROOT]):  # N.B. The current working directory is an implicit mount.
         volumes.extend(["--volume", f"{volume}:{volume}"])
 
+    options = []
+    # Determine whether we're in interactive mode.
+    # https://stackoverflow.com/questions/2356399/tell-if-python-is-in-interactive-mode
+    if hasattr(sys, 'ps1'):
+        options.append("--tty")
+        options.append("--interactive")
+
     # Construct the command.
     command = (["docker", "run",
+                "--tty",
                 "--user", f"{os.getuid()}:{os.getgid()}",
                 "--workdir", cwd] +
+               options +
                volumes +
                [image_tag, "python3", "-u", os.path.join(ROOT, "incontext.py")] +
                args)
