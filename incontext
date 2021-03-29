@@ -108,15 +108,13 @@ def main():
         volumes.extend(["--volume", f"{volume}:{volume}"])
 
     options = []
-    # Determine whether we're in interactive mode.
-    # https://stackoverflow.com/questions/2356399/tell-if-python-is-in-interactive-mode
-    if hasattr(sys, 'ps1'):
+    # Determine whether we have a tty.
+    if sys.stdin.isatty():
         options.append("--tty")
         options.append("--interactive")
 
     # Construct the command.
     command = (["docker", "run",
-                "--tty",
                 "--user", f"{os.getuid()}:{os.getgid()}",
                 "--workdir", cwd] +
                options +
