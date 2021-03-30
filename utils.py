@@ -190,6 +190,9 @@ def safe_command(command):
 
 
 def safe_basename(title):
+    import unidecode
+    title = unidecode.unidecode(title)
+    title = re.sub(r"['’]", "", title)
     title = re.sub(r"[^a-z0-9]+", " ", title.lower())
     title = re.sub(r"\W+", "-", title.strip())
     return title
