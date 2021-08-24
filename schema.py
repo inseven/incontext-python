@@ -79,6 +79,18 @@ class Identity(object):
         return data
 
 
+class String(object):
+
+    def __init__(self, transform):
+        self.transform = transform
+
+    def __call__(self, data):
+        data = self.transform(data)
+        if data is not None:
+            return str(data)
+        return None
+
+
 GPS_COORDINATE_EXPRESSION = re.compile(r"^(\d+\.\d+) ([NSEW])$")
 
 

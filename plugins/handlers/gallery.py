@@ -42,7 +42,7 @@ import paths
 import store
 import utils
 
-from schema import Default, Dictionary, Empty, EXIFDate, First, GPSCoordinate, Key
+from schema import Default, Dictionary, Empty, EXIFDate, First, GPSCoordinate, Key, String
 from expression import And, Glob, Metadata, Or
 
 
@@ -70,7 +70,7 @@ DEFAULT_CONFIGURATION = {
 
 METADATA_SCHEMA = Dictionary({
 
-    "title": First(Key("Title"), Key("DisplayName"), Key("ObjectName"), Empty()),
+    "title": String(First(Key("Title"), Key("DisplayName"), Key("ObjectName"), Empty())),
     "content": First(Key("ImageDescription"), Key("Description"), Key("ArtworkContentDescription"), Default(None)),
     "date": First(EXIFDate(First(Key("DateTimeOriginal"), Key("ContentCreateDate"), Key("CreationDate"))), Empty()),
     "projection": First(Key("ProjectionType"), Empty()),
