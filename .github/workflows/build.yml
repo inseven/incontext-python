@@ -11,10 +11,16 @@ jobs:
   tests:
 
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
 
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-monterey-m1]
+        os: [ubuntu-latest]
+        experimental: [false]
+        include:
+        - os: macos-monterey-m1
+          experimental: true
 
     steps:
 
