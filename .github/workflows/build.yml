@@ -31,4 +31,4 @@ jobs:
 
     - name: Run tests
       run: |
-        python3 -u incontext tests
+        python3 -u incontext --verbose tests
