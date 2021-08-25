@@ -20,7 +20,7 @@ jobs:
 
     - name: Add Homebrew to the path
       run:
-        echo "::add-path::/opt/homebrew/bin"
+        echo "/opt/homebrew/bin" >> $GITHUB_PATH
 
     - name: Checkout source
       uses: actions/checkout@v2
