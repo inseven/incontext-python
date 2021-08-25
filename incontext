@@ -71,6 +71,10 @@ def filter_paths(items):
 def main():
     args = sys.argv[1:]
 
+    # Rudimentary support for starting a debug shell in the Docker container.
+    # This bypasses the built-in argument parsing and should be handled more consistently in the future.
+    shell = (args == ["shell"])
+
     # Wait for docker to start up to handle situations where we've been launched before docker is running (e.g. system startup).
     waiting = False
     while True:
@@ -114,13 +118,20 @@ def main():
         options.append("--interactive")
 
     # Construct the command.
-    command = (["docker", "run",
-                "--user", f"{os.getuid()}:{os.getgid()}",
-                "--workdir", cwd] +
-               options +
-               volumes +
-               [image_tag, "python3", "-u", os.path.join(ROOT, "incontext.py")] +
-               args)
+    if shell:
+        command = (["docker", "run",
+                    "--workdir", cwd] +
+                options +
+                volumes +
+                [image_tag, "bash"])
+    else:
+        command = (["docker", "run",
+                    "--user", f"{os.getuid()}:{os.getgid()}",
+                    "--workdir", cwd] +
+                options +
+                volumes +
+                [image_tag, "python3", "-u", os.path.join(ROOT, "incontext.py")] +
+                args)
 
     # Run incontext in docker.
     logging.debug("Running command %s.", command)
