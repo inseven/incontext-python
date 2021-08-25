@@ -10,20 +10,30 @@ on:
 jobs:
   tests:
 
-    runs-on: Ubuntu-20.04
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        experimental: [false]
+        include:
+        - os: macos-monterey-m1
+          experimental: true
 
     steps:
+
+    - name: Ensure Homebrew is on the path (must be installed)
+      if: matrix.os == 'macos-monterey-m1'
+      run:
+        echo "/opt/homebrew/bin" >> $GITHUB_PATH
 
     - name: Checkout source
       uses: actions/checkout@v2
       with:
         submodules: recursive
         lfs: true
-
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
 
     - name: Run tests
       run: |
