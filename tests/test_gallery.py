@@ -150,6 +150,9 @@ class GalleryTestCase(unittest.TestCase):
         self.assertEqual(gallery.evaluate_tests(tests, {"basename": "IMG_3875.jpeg"}), "*")
         self.assertEqual(gallery.evaluate_tests(tests, {"basename": "IMG_3875.tiff"}), "image/jpeg")
 
+    # TODO: Re-enable HEIF tests #139
+    #       https://github.com/inseven/incontext/issues/139
+    @unittest.expectedFailure
     @common.with_temporary_directory
     def test_resize_heic(self):
 
