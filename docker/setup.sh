@@ -32,10 +32,8 @@ cd /usr/src/libheif/
 make
 make install
 cd /usr/src/
-wget https://www.imagemagick.org/download/ImageMagick.tar.gz
-tar xf ImageMagick.tar.gz
-rm ImageMagick.tar.gz
-cd ImageMagick-7*
+git clone --depth 1 https://github.com/ImageMagick/ImageMagick.git --branch 7.0.11-5 ImageMagick
+cd ImageMagick
 ./configure --with-heic=yes
 make
 make install
