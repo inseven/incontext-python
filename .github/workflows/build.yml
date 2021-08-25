@@ -18,6 +18,10 @@ jobs:
 
     steps:
 
+    - name: Add Homebrew to the path
+      run:
+        echo "::add-path::/opt/homebrew/bin"
+
     - name: Checkout source
       uses: actions/checkout@v2
       with:
