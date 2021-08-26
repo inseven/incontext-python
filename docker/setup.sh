@@ -15,15 +15,13 @@ cat requirements.txt | xargs apk add --no-cache
 
 mkdir -p /usr/src/
 
-LIBDE265_COMMIT=43c490812a6c7b78e9d73125c7e4e2d6ee9826d2
 LIBHEIF_COMMIT=0c49d5b4882bcbfc0279dede005832367eb83397
 # IMAGEMAGICK_COMMIT=fa87fa7287c8275f52b508770c814815ebe61a02
 
 # libde265
 cd /usr/src/
-git clone -b frame-parallel https://github.com/strukturag/libde265.git
+git clone --branch v1.0.8 https://github.com/strukturag/libde265.git
 cd libde265
-git checkout ${LIBDE265_COMMIT} .
 ./autogen.sh
 ./configure
 make -j8 install
