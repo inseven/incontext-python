@@ -15,7 +15,6 @@ cat requirements.txt | xargs apk add --no-cache
 
 mkdir -p /usr/src/
 
-LIBHEIF_COMMIT=0c49d5b4882bcbfc0279dede005832367eb83397
 # IMAGEMAGICK_COMMIT=fa87fa7287c8275f52b508770c814815ebe61a02
 
 # libde265
@@ -28,9 +27,8 @@ make -j8 install
 
 # libheif
 cd /usr/src/
-git clone https://github.com/strukturag/libheif.git
+git clone --branch v1.12.0 https://github.com/strukturag/libheif.git
 cd libheif
-git checkout ${LIBHEIF_COMMIT} .
 ./autogen.sh
 ./configure
 make -j8 install
