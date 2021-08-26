@@ -37,7 +37,6 @@ ruby
 ruby-dev
 tiff
 tiff-dev
-tiff-dev
 x265
 x265-dev
 zlib
