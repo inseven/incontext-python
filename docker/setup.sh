@@ -6,16 +6,13 @@ set -o pipefail
 set -u
 
 # Install the package dependencies.
+
 cd $INCONTEXT_DIR
 cat requirements.txt | xargs apk add --no-cache
 
-# Timezone support
-#ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime
-#dpkg-reconfigure --frontend noninteractive tzdata
+# Install the source dependencies.
 
 mkdir -p /usr/src/
-
-# IMAGEMAGICK_COMMIT=fa87fa7287c8275f52b508770c814815ebe61a02
 
 # libde265
 cd /usr/src/
@@ -35,9 +32,8 @@ make -j8 install
 
 # ImageMagick
 cd /usr/src/
-git clone https://github.com/ImageMagick/ImageMagick.git
+git clone --branch 7.1.0-5 https://github.com/ImageMagick/ImageMagick.git
 cd ImageMagick
-# git checkout ${IMAGEMAGICK_COMMIT} .
 ./configure \
     --with-heic \
     --with-tiff \
@@ -55,15 +51,19 @@ cd ImageMagick
 make -j8 install
 
 # Install the Python dependencies.
+
 cd $INCONTEXT_DIR
 python3 -m pip install pipenv
 pip3 install git+https://github.com/david-poirier-csn/pyheif.git
 pipenv install --verbose --system --skip-lock
 
 # Install the Ruby dependencies.
-# TODO: Ruby SASS is deprecated and should be removed.
+
+# TODO: Update the Sass tooling #142
+#       https://github.com/inseven/incontext/issues/142
 gem install sass
 
 # Clean up the working directory.
+
 cd /
 rm -r $INCONTEXT_DIR
