@@ -14,12 +14,12 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-monterey-m1]
+        os: [ubuntu-latest, macos-monterey-arm, macos-monterey-intel]
 
     steps:
 
-    - name: Ensure Homebrew is on the path (must be installed)
-      if: matrix.os == 'macos-monterey-m1'
+    - name: Ensure Homebrew is on the path (must be installed for Git-LFS support)
+      if: matrix.os == 'macos-monterey-arm' || matrix.os == 'macos-monterey-intel'
       run:
         echo "/opt/homebrew/bin" >> $GITHUB_PATH
 
