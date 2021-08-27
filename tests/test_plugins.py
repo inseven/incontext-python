@@ -39,11 +39,12 @@ class PluginsTestCase(unittest.TestCase):
                          {
                              "add",
                              "build",
-                             "build-documentation",
                              "clean",
+                             "documentation",
                              "new",
                              "publish",
-                                 "serve",
+                             "serve",
+                             "shell",
                              "tests",
                              "watch",
                          })
