@@ -18,15 +18,16 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import logging
+import os
+import shutil
+import subprocess
+import tempfile
+
 import cli
+import incontext
 
 
-@cli.preflight_plugin("serve",
-                      [cli.Argument("--port", "-p", type=int, default=8000)])
-def serve(container, options):
-    container.add_port(options.port)
-
-
-@cli.preflight_plugin("shell", [])
-def shell(container, options):
-    container.shell = True
+@incontext.command("shell", help="run a shell inside the Docker container", arguments=[])
+def command_shell(incontext, options):
+    pass

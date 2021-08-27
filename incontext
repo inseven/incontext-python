@@ -55,6 +55,7 @@ class Docker(object):
 
     def __init__(self):
         self.ports = []
+        self.shell = False
 
     def add_port(self, port):
         self.ports.append(port)
@@ -127,10 +128,6 @@ def main():
     # Get the unfiltered arguments
     args = sys.argv[1:]
 
-    # Rudimentary support for starting a debug shell in the Docker container.
-    # This bypasses the built-in argument parsing and should be handled more consistently in the future.
-    shell = (args == ["shell"])
-
     # Wait for docker to start up to handle situations where we've been launched before docker is running (e.g. system startup).
     waiting = False
     while True:
@@ -174,21 +171,21 @@ def main():
         options.append("--interactive")
 
     # Construct the command.
-    if shell:
+    if docker.shell:
         command = (["docker", "run",
                     "--workdir", site] +
-                options +
-                volumes +
-                [image_tag, "bash"])
+                    options +
+                    volumes +
+                    [image_tag, "bash"])
     else:
         command = (["docker", "run",
                     "--user", f"{os.getuid()}:{os.getgid()}",
-                "--workdir", site] +
-                options +
-                volumes +
-               docker.arguments +
-                [image_tag, "python3", "-u", os.path.join(ROOT, "incontext.py")] +
-                args)
+                    "--workdir", site] +
+                    options +
+                    volumes +
+                    docker.arguments +
+                   [image_tag, "python3", "-u", os.path.join(ROOT, "incontext.py")] +
+                   args)
 
     # Install a signal handler to allow the container to handle SIGINT.
     signal.signal(signal.SIGINT, signal_handler)
