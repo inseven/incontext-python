@@ -97,11 +97,11 @@ def main():
         logging.info("Building docker container...")
         quiet = [] if verbose else ["--quiet"]
         subprocess.check_call(["docker", "build",
-                               "--network", "host",
                                "-t", image_tag,
                                "-f", DOCKERFILE] +
                               quiet +
-                              [ROOT])
+                              [ROOT] +
+                              ["--network=host"])
 
     # Iterate over the arguments determining which ones map to files or directories on the file system.
     # These will be mounted as volumes when running Docker Compose to ensure the instance of incontext running
