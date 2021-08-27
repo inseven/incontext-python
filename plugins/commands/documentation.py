@@ -49,7 +49,7 @@ INDEX_TEMPLATE = """
 """
 
 
-@incontext.command("documentation", help="build the documentation",
+@incontext.command("build-documentation", help="build the documentation",
                    arguments=[
                        cli.Argument("output", help="output directory"),
                    ])
