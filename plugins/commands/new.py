@@ -27,7 +27,7 @@ import tempfile
 import incontext
 
 
-@incontext.command("new", help="Create a new site", arguments=[
+@incontext.command("new", help="create a new site", arguments=[
     incontext.Argument("path", help="destination of the new site")
 ])
 def command_tests(incontext, options):
