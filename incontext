@@ -97,6 +97,7 @@ def main():
         logging.info("Building docker container...")
         quiet = [] if verbose else ["--quiet"]
         subprocess.check_call(["docker", "build",
+                               "--network", "host",
                                "-t", image_tag,
                                "-f", DOCKERFILE] +
                               quiet +
