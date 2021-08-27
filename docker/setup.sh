@@ -1,51 +1,69 @@
 #!/bin/bash
 
 set -e
-
-export DEBIAN_FRONTEND=noninteractive
+set -x
+set -o pipefail
+set -u
 
 # Install the package dependencies.
+
 cd $INCONTEXT_DIR
-apt-get update
-cat requirements.txt | xargs apt-get install -y
+cat requirements.txt | xargs apk add --no-cache
 
-# Timezone support
-ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime
-dpkg-reconfigure --frontend noninteractive tzdata
+# Install the source dependencies.
 
-# Install ImageMagick with HEIC support
-sed -Ei 's/^# deb-src /deb-src /' /etc/apt/sources.list
-apt-get update
-apt-get install -y build-essential autoconf git-core wget
-apt-get build-dep -y imagemagick libde265 libheif
+mkdir -p /usr/src/
+
+# libde265
 cd /usr/src/
-git clone https://github.com/strukturag/libde265.git
-git clone https://github.com/strukturag/libheif.git
-cd libde265/
+git clone --branch v1.0.8 https://github.com/strukturag/libde265.git
+cd libde265
 ./autogen.sh
 ./configure
-make
-make install
-cd /usr/src/libheif/
+make -j8 install
+
+# libheif
+cd /usr/src/
+git clone --branch v1.12.0 https://github.com/strukturag/libheif.git
+cd libheif
 ./autogen.sh
 ./configure
-make
-make install
+make -j8 install
+
+# ImageMagick
 cd /usr/src/
-wget https://www.imagemagick.org/download/ImageMagick.tar.gz
-tar xf ImageMagick.tar.gz
-rm ImageMagick.tar.gz
-cd ImageMagick-7*
-./configure --with-heic=yes
-make
-make install
-ldconfig
+git clone --branch 7.1.0-5 https://github.com/ImageMagick/ImageMagick.git
+cd ImageMagick
+./configure \
+    --with-heic \
+    --with-tiff \
+    --with-heic \
+    --with-jpeg \
+    --with-lcms2 \
+    --with-png \
+    --with-gslib \
+    --with-openexr \
+    --with-zlib \
+    --with-gs-font-dir=/usr/share/fonts/Type1 \
+    --with-threads \
+    --with-webp \
+    --without-x
+make -j8 install
 
 # Install the Python dependencies.
+
 cd $INCONTEXT_DIR
 python3 -m pip install pipenv
+pip3 install git+https://github.com/david-poirier-csn/pyheif.git
 pipenv install --verbose --system --skip-lock
 
+# Install the Ruby dependencies.
+
+# TODO: Update the Sass tooling #142
+#       https://github.com/inseven/incontext/issues/142
+gem install sass
+
 # Clean up the working directory.
+
 cd /
 rm -r $INCONTEXT_DIR
