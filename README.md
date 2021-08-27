@@ -1,6 +1,6 @@
 # InContext
 
-![Build](https://github.com/jbmorley/incontext/workflows/Build/badge.svg)
+[![Build](https://github.com/inseven/incontext/actions/workflows/build.yml/badge.svg)](https://github.com/inseven/incontext/actions/workflows/build.yml)
 
 An extensible multimedia static site generator
 
