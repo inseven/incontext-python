@@ -161,7 +161,7 @@ def main():
     # Passing a path on the command line is treated as granting implicit permission to the container.
     site = os.path.abspath(options.site)
     volumes = []
-    for volume in unique_prefixes(filter_paths(args) + [site] + [ROOT]):  # N.B. The current working directory is an implicit mount.
+    for volume in unique_prefixes(filter_paths(args) + [site] + [ROOT]):
         volumes.extend(["--volume", f"{volume}:{volume}"])
 
     options = []
