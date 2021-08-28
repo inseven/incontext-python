@@ -39,8 +39,8 @@ class PluginsTestCase(unittest.TestCase):
                          {
                              "add",
                              "build",
-                             "build-documentation",
                              "clean",
+                             "documentation",
                              "new",
                              "publish",
                              "tests",

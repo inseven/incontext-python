@@ -48,11 +48,11 @@ INDEX_TEMPLATE = """
 """
 
 
-@incontext.command("build-documentation", help="build the documentation",
+@incontext.command("documentation", help="build the documentation",
                    arguments=[
                        incontext.Argument("output", help="output directory"),
                    ])
-def command_build_documentation(incontext, options):
+def command_documentation(incontext, options):
     documentation_directory = os.path.abspath(options.output)
 
     with utils.Chdir(paths.INCONTEXT_DIRECTORY):
