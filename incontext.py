@@ -20,7 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import argparse
 import collections
 import copy
 import glob
@@ -28,6 +27,7 @@ import logging
 import os
 import sys
 
+import cli
 import paths
 import utils
 
@@ -57,7 +57,7 @@ class _CommandPlugin(object):
             return self._runner
         elif self.callback_type == CALLBACK_TYPE_STANDALONE:
             for argument in self.arguments:
-                parser.add_argument(*(argument.args), **(argument.kwargs))
+                argument.bind(parser)
             def callback(options):
                 return self.callback(incontext, options)
             self._runner = callback
@@ -66,13 +66,6 @@ class _CommandPlugin(object):
 
     def run(self, **kwargs):
         return self._runner(Namespace(**kwargs))
-
-
-class Argument(object):
-
-    def __init__(self, *args, **kwargs):
-        self.args = args
-        self.kwargs = kwargs
 
 
 class _Plugins(object):
@@ -243,7 +236,7 @@ class InContext(object):
         Primarily intended to be used by configuration providers to allow them to specify a path to a configuration
         file, or configuration override.
         """
-        self.arguments.append(Argument(*args, **kwargs))
+        self.arguments.append(cli.Argument(*args, **kwargs))
 
     def add_command(self, name, function, help=""):
         """
@@ -316,11 +309,7 @@ class InContext(object):
         Return a parser, configured with the currently loaded plugins.
         """
         # Create the argument parser.
-        parser = argparse.ArgumentParser(prog="incontext", add_help=False, description="Generate website.")
-        parser.add_argument('--help', '-h', default=False, action='store_true', help="show this help message and exit")
-        parser.add_argument('--site', '-s', default=os.getcwd(), help="path to the root of the site")
-        parser.add_argument('--verbose', '-v', action='store_true', default=False, help="show verbose output")
-        parser.add_argument('--volume', action='append', help="mount an additional volume in the Docker container")
+        parser = cli.parser()
 
         # Add the top-level arguments.
         for argument in self.arguments:
