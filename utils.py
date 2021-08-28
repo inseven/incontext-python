@@ -261,3 +261,10 @@ def wait_for_keyboard_interrupt():
             time.sleep(1)
     except KeyboardInterrupt:
         return
+
+
+def merge_dictionaries(a, b):
+    result = dict(a)
+    for key, value in b.items():
+        result[key] = value
+    return result

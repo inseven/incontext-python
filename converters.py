@@ -27,6 +27,7 @@ import sys
 import titlecase
 
 import paths
+import utils
 
 sys.path.append(paths.SERVICE_DIR)
 
@@ -38,14 +39,6 @@ def read_frontmatter(path):
     data = fm.metadata
     data["content"] = fm.content
     return data
-
-
-# TODO: Move converters.merge_dictionaries into utils #96
-def merge_dictionaries(a, b):
-    result = dict(a)
-    for key, value in b.items():
-        result[key] = value
-    return result
 
 
 def clean_name(path):
@@ -151,10 +144,10 @@ def frontmatter_document(root, path, default_category='general'):
     @rtype: store.Document
     """
     data = {}
-    data = merge_dictionaries(data, read_frontmatter(os.path.join(root, path)))
-    data = merge_dictionaries(data, {key: value for key, value in parse_path(path).items()
-                                     if ((key != "title" or "title" not in data) and
-                                         (key != "date" or "date" not in data))})
+    data = utils.merge_dictionaries(data, read_frontmatter(os.path.join(root, path)))
+    data = utils.merge_dictionaries(data, {key: value for key, value in parse_path(path).items()
+                                           if ((key != "title" or "title" not in data) and
+                                               (key != "date" or "date" not in data))})
     data["path"] = ensure_leading_slash(path)
     if "category" not in data:
         data["category"] = default_category

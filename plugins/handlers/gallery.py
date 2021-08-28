@@ -146,7 +146,7 @@ def exif(path):
     if os.path.exists(sidecar_path):
         with open(sidecar_path, "r") as fh:
             sidecar = json.loads(fh.read())
-            data = converters.merge_dictionaries(data, sidecar)
+            data = utils.merge_dictionaries(data, sidecar)
 
     return data
 
@@ -349,7 +349,7 @@ def metadata_from_exif(path):
 def metadata_for_media_file(root, path, title_from_filename):
     metadata = converters.parse_path(path, title_from_filename=title_from_filename)
     exif_metadata = metadata_from_exif(os.path.join(root, path))
-    metadata = converters.merge_dictionaries(metadata, exif_metadata)
+    metadata = utils.merge_dictionaries(metadata, exif_metadata)
     return metadata
 
 
