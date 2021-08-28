@@ -135,10 +135,11 @@ def main():
     image_tag = f"{DOCKER_IMAGE_NAME}:{directory_sha}"
     images = subprocess.check_output(["docker", "images", "-q", image_tag]).decode("utf-8").strip().split("\n")
     images = [image for image in images if image]
-    if not images:
+    if not images or options.no_cache:
         logging.info("Building docker container...")
         quiet = [] if verbose else ["--quiet"]
         subprocess.check_call(["docker", "build",
+                               "--no-cache",
                                "-t", image_tag,
                                "-f", DOCKERFILE] +
                               quiet +
