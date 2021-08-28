@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Copyright (c) 2016-2021 InSeven Limited
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,31 +18,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import os
-import sys
-import unittest
-
-import common
-
-import incontext
-import paths
-import utils
+import cli
 
 
-class PluginsTestCase(unittest.TestCase):
-
-    def test_expected_plugins(self):
-        instance = incontext.InContext(plugins_directory=paths.PLUGINS_DIR)
-        self.assertEqual(set(instance.plugins(incontext.PLUGIN_TYPE_COMMAND).keys()),
-                         {
-                             "add",
-                             "build",
-                             "clean",
-                             "documentation",
-                             "new",
-                             "publish",
-                             "serve",
-                             "shell",
-                             "tests",
-                             "watch",
-                         })
+@cli.preflight_plugin("shell", [])
+def shell(container, options):
+    container.shell = True

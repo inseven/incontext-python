@@ -29,6 +29,7 @@ import struct
 import subprocess
 import sys
 import tempfile
+import time
 
 
 class Chdir(object):
@@ -252,3 +253,11 @@ def load_plugins(path):
             importlib.import_module(module)
         plugins[module] = sys.modules[module]
     return plugins
+
+
+def wait_for_keyboard_interrupt():
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        return

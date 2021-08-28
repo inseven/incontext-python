@@ -26,7 +26,7 @@ import incontext
 import paths
 
 
-@incontext.command("tests", help="Run the tests")
+@incontext.command("tests", help="run the tests")
 def command_tests(incontext, options):
     environment = dict(os.environ)
     environment["PYTHONPATH"] = paths.INCONTEXT_DIRECTORY

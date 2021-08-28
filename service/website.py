@@ -208,9 +208,7 @@ class DocumentWrapper(object):
         try:
             return self._document[name]
         except KeyError:
-            if name == "date":
-                return None
-            raise AttributeError
+            return None
 
     @property
     def hash(self):

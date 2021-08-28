@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Copyright (c) 2016-2021 InSeven Limited
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,31 +18,16 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import logging
 import os
-import sys
-import unittest
+import shutil
+import subprocess
+import tempfile
 
-import common
-
+import cli
 import incontext
-import paths
-import utils
 
 
-class PluginsTestCase(unittest.TestCase):
-
-    def test_expected_plugins(self):
-        instance = incontext.InContext(plugins_directory=paths.PLUGINS_DIR)
-        self.assertEqual(set(instance.plugins(incontext.PLUGIN_TYPE_COMMAND).keys()),
-                         {
-                             "add",
-                             "build",
-                             "clean",
-                             "documentation",
-                             "new",
-                             "publish",
-                             "serve",
-                             "shell",
-                             "tests",
-                             "watch",
-                         })
+@incontext.command("shell", help="run a shell inside the Docker container", arguments=[])
+def command_shell(incontext, options):
+    pass
