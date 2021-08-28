@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Copyright (c) 2016-2021 InSeven Limited
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,31 +18,32 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import os
-import sys
-import unittest
+import contextlib
+import http.server
+import logging
 
-import common
-
+import cli
 import incontext
-import paths
 import utils
 
+import commands.build
 
-class PluginsTestCase(unittest.TestCase):
 
-    def test_expected_plugins(self):
-        instance = incontext.InContext(plugins_directory=paths.PLUGINS_DIR)
-        self.assertEqual(set(instance.plugins(incontext.PLUGIN_TYPE_COMMAND).keys()),
-                         {
-                             "add",
-                             "build",
-                             "clean",
-                             "documentation",
-                             "new",
-                             "publish",
-                             "serve",
-                             "shell",
-                             "tests",
-                             "watch",
-                         })
+@incontext.command("serve", help="run a local web server for development", arguments=[
+    cli.Argument("--port", "-p",
+                 type=int, default=8000,
+                 help="destination of the new site"),
+    cli.Argument("--watch",
+                 action="store_true", default=False,
+                 help="watch for changes and rebuild automatically")
+])
+def command_serve(incontext, options):
+    builder_context = commands.build.WatchingBuilder(incontext) if options.watch else contextlib.nullcontext()
+    with builder_context, utils.Chdir(incontext.configuration.site.destination.files_directory):
+        httpd = http.server.HTTPServer(('', options.port),
+                                       http.server.SimpleHTTPRequestHandler)
+        logging.info("Listening on %s...", options.port)
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            return
