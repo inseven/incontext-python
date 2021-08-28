@@ -74,12 +74,12 @@ def import_video(incontext, from_directory, to_directory, category, title_from_f
                                    thumbnail_path])
 
         size = gallery.get_size(thumbnail_path, 1)
-        data["thumbnail"] = converters.merge_dictionaries({'filename': thumbnail_name,
-                                                           'url': os.path.join("/", dirname, thumbnail_name)},
-                                                          size)
-        data["video"] = converters.merge_dictionaries({'filename': mp4_name,
-                                                       'url': os.path.join("/", dirname, mp4_name)},
-                                                       size)
+        data["thumbnail"] = utils.merge_dictionaries({'filename': thumbnail_name,
+                                                      'url': os.path.join("/", dirname, thumbnail_name)},
+                                                     size)
+        data["video"] = utils.merge_dictionaries({'filename': mp4_name,
+                                                  'url': os.path.join("/", dirname, mp4_name)},
+                                                 size)
 
         data["path"] = converters.ensure_leading_slash(path)
 
