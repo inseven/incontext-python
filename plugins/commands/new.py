@@ -24,11 +24,12 @@ import shutil
 import subprocess
 import tempfile
 
+import cli
 import incontext
 
 
 @incontext.command("new", help="create a new site", arguments=[
-    incontext.Argument("path", help="destination of the new site")
+    cli.Argument("path", help="destination of the new site")
 ])
 def command_tests(incontext, options):
     print(os.path.abspath(options.site))
