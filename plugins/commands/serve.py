@@ -39,7 +39,21 @@ import utils
 import commands.build
 
 
-@incontext.command("watch", help="watch for changes and automatically build the website")
-def command_watch(incontext, options):
-    with commands.build.WatchingBuilder(incontext):
-        utils.wait_for_keyboard_interrupt()
+@incontext.command("serve", help="run a local web server for development", arguments=[
+    cli.Argument("--port", "-p",
+                 type=int, default=8000,
+                 help="destination of the new site"),
+    cli.Argument("--watch",
+                 action="store_true", default=False,
+                 help="watch for changes and rebuild automatically")
+])
+def command_serve(incontext, options):
+    builder_context = commands.build.WatchingBuilder(incontext) if options.watch else contextlib.nullcontext()
+    with builder_context, utils.Chdir(incontext.configuration.site.destination.files_directory):
+        httpd = http.server.HTTPServer(('', options.port),
+                                       http.server.SimpleHTTPRequestHandler)
+        logging.info("Listening on %s...", options.port)
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            return
