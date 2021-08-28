@@ -100,13 +100,6 @@ def filter_paths(items):
     return [os.path.abspath(item) for item in items if os.path.exists(item)]
 
 
-def first_index(items, where):
-    try:
-        return next(index for (index, item) in enumerate(items) if where(item))
-    except StopIteration:
-        raise NotFound()
-
-
 def main():
 
     # Proxy object for the docker configuration.
