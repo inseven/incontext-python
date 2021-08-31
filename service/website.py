@@ -42,6 +42,7 @@ import dateutil.parser
 import jinja2
 import lxml.html
 import misaka
+import titlecase
 
 from flask import Flask, Response, render_template, send_from_directory, send_file, abort, jsonify, request
 
@@ -458,8 +459,13 @@ def filter_render_template(template, **kwargs):
     return content
 
 
+def filter_titlecase(string):
+    return titlecase.titlecase(string)
+
+
 app.add_template_filter(filter_base64, name='base64')
 app.add_template_filter(filter_render_template, name='render_template')
+app.add_template_filter(filter_titlecase, name='titlecase')
 
 
 def fixup_relative_url(url, page_path):
