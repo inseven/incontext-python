@@ -16,7 +16,7 @@ mkdir -p /usr/src/
 
 # libde265
 cd /usr/src/
-git clone --branch v1.0.8 https://github.com/strukturag/libde265.git
+git clone --branch v1.0.8 https://github.com/strukturag/libde265.git --depth 1
 cd libde265
 ./autogen.sh
 ./configure
@@ -24,7 +24,7 @@ make -j8 install
 
 # libheif
 cd /usr/src/
-git clone --branch v1.12.0 https://github.com/strukturag/libheif.git
+git clone --branch v1.12.0 https://github.com/strukturag/libheif.git --depth 1
 cd libheif
 ./autogen.sh
 ./configure
@@ -32,7 +32,7 @@ make -j8 install
 
 # ImageMagick
 cd /usr/src/
-git clone --branch 7.1.0-5 https://github.com/ImageMagick/ImageMagick.git
+git clone --branch 7.1.0-5 https://github.com/ImageMagick/ImageMagick.git --depth 1
 cd ImageMagick
 ./configure \
     --with-heic \
