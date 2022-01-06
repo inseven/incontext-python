@@ -433,15 +433,16 @@ class DefaultAttributeWrapper(object):
     def __getattr__(self, name):
         if name == self.name:
             try:
-                value = self.wrapped.__getattr__(name)
+                value = getattr(self.wrapped, name)
                 if value is None:
                     return self.value
                 return value
             except AttributeError:
                 return self.value
         elif name == f"{self.name}_original":
-            return self.wrapped.__getattr__(self.name)
-        return self.wrapped.__getattr__(name)
+            return getattr(self.wrapped, self.name)
+        else:
+            return getattr(self.wrapped, name)
 
 
 @app.add_template_filter
