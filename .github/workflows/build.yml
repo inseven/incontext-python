@@ -31,6 +31,10 @@ jobs:
         submodules: recursive
         lfs: true
 
+    - name: Prune Docker images
+      run: |
+        docker system prune -f
+
     - name: Run tests
       run: |
         python3 -u incontext --no-cache --verbose tests
