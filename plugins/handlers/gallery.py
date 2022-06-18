@@ -30,6 +30,7 @@ import os.path
 import subprocess
 
 import dateutil
+import frontmatter
 import pyheif
 import whatimage
 import yaml
@@ -342,8 +343,15 @@ def metadata_from_exif(path):
     Generate a metadata dictionary from just the EXIF data contained within the file at `path`, as specified within
     `METADATA_SCHEMA`.
     """
-    exif_data = exif(path)
-    return METADATA_SCHEMA(exif_data)
+    data = METADATA_SCHEMA(exif(path))
+
+    if data["content"] is not None:
+        fm = frontmatter.loads(data["content"])
+        frontmatter_data = fm.metadata
+        frontmatter_data["content"] = fm.content
+        data = utils.merge_dictionaries(data, frontmatter_data)
+
+    return data
 
 
 def metadata_for_media_file(root, path, title_from_filename):
