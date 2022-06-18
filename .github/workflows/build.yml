@@ -16,7 +16,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-monterey-arm, macos-monterey-intel]
+        os: [ubuntu-latest, macos-ventura-arm, macos-monterey-intel]
 
     steps:
 
