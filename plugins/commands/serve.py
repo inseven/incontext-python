@@ -42,7 +42,7 @@ def command_serve(incontext, options):
     with builder_context, utils.Chdir(incontext.configuration.site.destination.files_directory):
         httpd = http.server.HTTPServer(('', options.port),
                                        http.server.SimpleHTTPRequestHandler)
-        logging.info("Listening on %s...", options.port)
+        logging.info("Serving site on http://localhost:%s...", options.port)
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
