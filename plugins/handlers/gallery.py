@@ -344,13 +344,9 @@ def metadata_from_exif(path):
     `METADATA_SCHEMA`.
     """
     data = METADATA_SCHEMA(exif(path))
-
     if data["content"] is not None:
-        fm = frontmatter.loads(data["content"])
-        frontmatter_data = fm.metadata
-        frontmatter_data["content"] = fm.content
+        frontmatter_data = converters.parse_frontmatter(data["content"])
         data = utils.merge_dictionaries(data, frontmatter_data)
-
     return data
 
 

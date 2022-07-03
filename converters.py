@@ -34,11 +34,21 @@ sys.path.append(paths.SERVICE_DIR)
 import store
 
 
-def read_frontmatter(path):
-    fm = frontmatter.load(path)
+def parse_frontmatter(string):
+    # Front Matter and Markdown don't understand Unicode line separators so we replace them with a simple new line
+    # to ensure we're as permissive as possible. This fix was introduced to address issues with Markdown in captions
+    # of photos exported by Photos for macOS which appears to offer no way to insert paragraph separators or new
+    # lines.
+    content = string.replace("\u2028", "\n")
+    fm = frontmatter.loads(content)
     data = fm.metadata
     data["content"] = fm.content
     return data
+
+
+def read_frontmatter(path):
+    with open(path) as fh:
+        return parse_frontmatter(fh.read())
 
 
 def clean_name(path):

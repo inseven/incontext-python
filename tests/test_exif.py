@@ -34,6 +34,7 @@ import gallery
 
 IMG_4056_JPEG = os.path.join(paths.TEST_DATA_DIRECTORY, "exif/IMG_4056.jpeg")
 IMG_4056_WITH_SIDECAR_JPEG = os.path.join(paths.TEST_DATA_DIRECTORY, "exif/IMG_4056_with_sidecar.jpeg")
+IMAGE_WITH_FRONTMATTER_AND_LINE_SEPARATORS = os.path.join(paths.TEST_DATA_DIRECTORY, "exif/2022-07-02-14-20-38-coaltown.jpeg")
 
 
 class ExifTestCase(unittest.TestCase):
@@ -49,3 +50,7 @@ class ExifTestCase(unittest.TestCase):
     def test_sidecar_overrides_title(self):
         metadata = gallery.metadata_from_exif(IMG_4056_WITH_SIDECAR_JPEG)
         self.assertEqual(metadata["title"], "Sunrise")
+
+    def test_caption_with_frontmatter_and_line_separators(self):
+        metadata = gallery.metadata_from_exif(IMAGE_WITH_FRONTMATTER_AND_LINE_SEPARATORS)
+        self.assertEqual(metadata["title"], "Coaltown")
