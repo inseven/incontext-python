@@ -54,6 +54,13 @@ def initialize_plugin(incontext):
     incontext.add_handler("import_markdown", import_markdown)
     incontext.add_task("process_files", process_files)
 
+    # Register utility functions.
+    def load_frontmatter_document(path, *args, **kwargs):
+        root = incontext.configuration.site.root
+        relative_path = os.path.relpath(os.path.abspath(path), root)
+        return converters.frontmatter_document(root, relative_path, *args, **kwargs)
+    incontext.add_extension("load_frontmatter_document", load_frontmatter_document)
+
 
 class SiteConfiguration(object):
 

@@ -189,10 +189,17 @@ def command_publish(incontext, parser):
     parser.add_argument("path", help="path to post to publish")
 
     def publish(options):
-        basename = os.path.basename(options.path)
+
+        # Read the title and determine a suitable basename.
+        document = incontext.load_frontmatter_document(os.path.join(options.path, "index.markdown"))
+        basename = utils.safe_basename(document.title)
         date = datetime.datetime.now().strftime("%Y-%m-%d")
-        utils.makedirs(incontext.configuration.site.paths.posts)
         destination = os.path.join(incontext.configuration.site.paths.posts, "%s-%s" % (date, basename))
+
+        # Ensure the destination directory exists.
+        utils.makedirs(incontext.configuration.site.paths.posts)
+
+        # Move the file to the new location.
         logging.info("Publishing to '%s'..." % (os.path.relpath(destination, incontext.configuration.site.root), ))
         shutil.move(os.path.abspath(options.path), destination)
 
