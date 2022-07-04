@@ -172,6 +172,7 @@ class InContext(object):
         self.configuration = Configuration()
         self._plugins = copy.deepcopy(_PLUGINS)
         self._loaded_plugin_directories = {}
+        self.extensions = {}
 
         # Load and initialize the plugins.
         self.load_plugins(os.path.abspath(plugins_directory))
@@ -303,6 +304,25 @@ class InContext(object):
         @rtype: callable
         """
         return self.handlers[name]
+
+    def add_extension(self, name, function):
+        """
+        Register a top-level extension to make it available to other plugins.
+
+        For example, this can be used to register a top-level function for importing Markdown documents that can be
+        shared across plugins.
+
+        @param name: The extension name.
+        @type name: str
+        @param function: The function to be called.
+        @type function: callable
+        """
+        if name in self.extensions:
+            raise AssertionError("Extension '%s' is already defined." % name)
+        self.extensions[name] = function
+
+    def __getattr__(self, name):
+        return self.extensions[name]
 
     def parser(self, add_subparsers=True):
         """
