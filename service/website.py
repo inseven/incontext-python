@@ -383,7 +383,7 @@ def sort_by(items, key):
 
 @app.add_template_filter
 def json(object):
-    return js.dumps(object)
+    return store.DateTimeEncoder().encode(object)
 
 
 @app.add_template_filter
