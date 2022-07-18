@@ -95,7 +95,7 @@ class SchemaTestCase(unittest.TestCase):
     def test_gps_coordinate(self):
         s = GPSCoordinate(Identity())
         self.assertEqual(s("45.5283694444 N"), 45.5283694444)
-        self.assertEqual(s("45.5283694444 S"), 45.5283694444)
+        self.assertEqual(s("45.5283694444 S"), -45.5283694444)
         self.assertEqual(s("119.3941638889 W"), -119.3941638889)
         self.assertEqual(s("119.3941638889 E"), 119.3941638889)
         with self.assertRaises(AssertionError):

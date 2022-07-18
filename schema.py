@@ -106,7 +106,7 @@ class GPSCoordinate(object):
             raise AssertionError(f"Invalid GPS coordinate '{data}'.")
         value = float(match.group(1))
         direction = match.group(2)
-        if direction == "W":
+        if direction == "W" or direction == "S":
             value = value * -1
         return value
 
