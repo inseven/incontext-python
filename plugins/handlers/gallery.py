@@ -72,7 +72,7 @@ DEFAULT_CONFIGURATION = {
 METADATA_SCHEMA = Dictionary({
 
     "title": String(First(Key("Title"), Key("DisplayName"), Key("ObjectName"), Empty())),
-    "content": First(Key("ImageDescription"), Key("Description"), Key("ArtworkContentDescription"), Default(None)),
+    "content": String(First(Key("ImageDescription"), Key("Description"), Key("ArtworkContentDescription"), Default(None))),
     "date": First(EXIFDate(First(Key("DateTimeOriginal"), Key("ContentCreateDate"), Key("CreationDate"))), Empty()),
     "projection": First(Key("ProjectionType"), Empty()),
     "location": First(Dictionary({
