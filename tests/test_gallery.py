@@ -614,6 +614,23 @@ class GalleryTestCase(unittest.TestCase):
             site.assertExists("build/files/gallery/index.html")
             site.assertFileContents("build/files/gallery/index.html", '<p><img src="/gallery/image/image.jpeg"></p>\n')
 
+    def test_markdown_alt_rewrite(self):
+        with common.TemporarySite(self) as site:
+            site.add("site.yaml", SITE_CONFIGURATION_WITH_COMMON_HANDLERS)
+            site.add("templates/photo.html", '{{ page.title }}')
+            site.add("templates/post.html", '{{ page.html | safe }}')
+            site.add("templates/image.html", '<img alt="{{ image.alt }}" src="{{ image.image.url }}">')
+            site.makedirs("content/gallery")
+            site.copy(IMG_3864_JPEG, "content/gallery/image.jpeg")
+            site.add("content/gallery/index.markdown", '![Markdown alt text](image.jpeg)')
+            site.build()
+            site.assertExists("build/files/gallery/image/index.html")
+            site.assertExists("build/files/gallery/image/image.jpeg")
+            site.assertExists("build/files/gallery/image/thumbnail.jpeg")
+            site.assertExists("build/files/gallery/index.html")
+            site.assertFileContents("build/files/gallery/index.html", '<p><img alt="Markdown alt text" src="/gallery/image/image.jpeg"></p>\n')
+
+
 # TODO: Check that images that don't exist don't break renders (in both regular tags and todos)
 # TODO: Test that thumbnails have been created
 # TODO: Test that absolute path image URLs are not incorrectly fixed up
