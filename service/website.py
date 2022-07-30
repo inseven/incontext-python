@@ -510,7 +510,7 @@ def markdown(page):
         document = lxml.html.fromstring(content)
         for image in document.xpath("//img"):
             src = image.get('src')
-            if src.startswith("+"):
+            if src is not None and src.startswith("+"):  # '+' denotes Markdown images
                 image_url = (os.path.splitext(src[1:])[0] + "/").lower()
                 image_document = app.jinja_env.site.post(image_url)
                 if image_document is None:
@@ -529,7 +529,8 @@ def markdown(page):
                 parent.insert(parent.index(image) + 1, replacement_image)
                 parent.remove(image)
             else:
-                image.set('src', fixup_relative_image_url(src, page["path"]))
+                if src is not None:
+                    image.set('src', fixup_relative_image_url(src, page["path"]))
                 image.set('srcset', fixup_relative_image_srcset(image.get('srcset'), page["path"]))
         for source in document.xpath("//picture/source"):
             srcset = source.get('srcset')
