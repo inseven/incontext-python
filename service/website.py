@@ -522,6 +522,10 @@ def markdown(page):
                     title = image_document['title']
                 except KeyError:
                     pass
+
+                # Ensure the image document contains the alt text from the markdown.
+                image_document.alt = image.get("alt")
+
                 html = template.render(site=app.jinja_env.site,
                                        image=image_document)
                 replacement_image = lxml.html.fromstring(html)
