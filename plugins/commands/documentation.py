@@ -62,6 +62,12 @@ def command_documentation(incontext, options):
         files = utils.find(paths.INCONTEXT_DIRECTORY,
                            extensions=[".py"],
                            transform=lambda x: os.path.relpath(x, paths.INCONTEXT_DIRECTORY))
+
+        # Don't attempt to generate documentation for website.py as Flask gets upset.
+        files.remove("service/website.py")
+
+        # Get the paths as Python module names.
+        # TODO: Restore the filter documentation generation after dropping Flask dependency
         modules = [os.path.splitext(f)[0] for f in files]
 
         # Generate the Python documentation.
