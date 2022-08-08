@@ -73,6 +73,16 @@ class ParsePathTestCase(unittest.TestCase):
         self.assertEqual(metadata["url"], "/2014-02-21-album-art@2x/")
         self.assertEqual(metadata["scale"], 2)
 
+    def test_image_with_scale_no_date(self):
+        metadata = converters.parse_path("mail@2x.png")
+        self.assertEqual(metadata["url"], "/mail@2x/")
+        self.assertEqual(metadata["scale"], 2)
+
+    def test_title_and_scale_from_path(self):
+        title, scale = converters.title_and_scale_from_path("mail@2x.png")
+        self.assertEqual(title, "Mail")
+        self.assertEqual(scale, 2)
+
     def test_image_with_scale_time(self):
         metadata = converters.parse_path("2014-02-21-18-24-album-art@2x.jpg")
         self.assertEqual(metadata["title"], "Album Art")
