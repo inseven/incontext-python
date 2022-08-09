@@ -238,6 +238,12 @@ class DocumentWrapper(object):
         document = self._record_query({"type": "previous", "parent": self._document["parent"]})
         return document[0] if document else None
 
+    def post(self, url):
+        posts = self._record_query({"type": "post", "url": url})
+        if posts:
+            return posts[0]
+        return None
+
     @property
     def next(self):
         document = self._record_query({"type": "next", "parent": self._document["parent"]})
@@ -312,12 +318,20 @@ class DocumentWrapper(object):
             return self.url + path
         return path
 
+    def url_for_path(self, path):
+        abspath = self.abspath(path)
+        metadata = converters.parse_path(abspath, title_from_filename=False)
+        return metadata["url"]
+
+    def post_for_path(self, path):
+        url = self.url_for_path(path)
+        return self.post(url)
+
     @property
     def content(self):
         if self._document["content"]:
-            content = app.jinja_env.from_string(self._document["content"]).render(site=app.jinja_env.site,
-                                                                                  page=self,
-                                                                                  url=self.url)
+            document_as_template = app.jinja_env.from_string(self._document["content"])
+            content = document_as_template.render(site=app.jinja_env.site, page=self, url=self.url)
             return content
         return None
 
