@@ -173,7 +173,7 @@ def process_files(incontext, options, handlers):
     template_hash = utils.hash_items(template_mtimes)
 
     logging.info("Rendering...")
-    cache_path = os.path.join(incontext.configuration.site.destination.root_directory, "phase-6-render-content.json")
+    cache_path = os.path.join(incontext.configuration.site.destination.root_directory, "phase-2-render.json")
     render_change_tracker = tracker.ChangeTracker("render", cache_path)
     website = Website(incontext=incontext)
     for document in website.documents():
