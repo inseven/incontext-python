@@ -330,17 +330,9 @@ class DocumentWrapper(object):
     @property
     def content(self):
         if self._document["content"]:
-            try:
-                document_as_template = app.jinja_env.from_string(self._document["content"])
-                content = document_as_template.render(site=app.jinja_env.site,
-                                                      page=self,
-                                                      url=self.url)
-                return content
-            except Exception as e:
-                logging.error(type(e))
-                logging.error("IT FAILED HERE!!")
-                logging.error(e)
-                raise
+            document_as_template = app.jinja_env.from_string(self._document["content"])
+            content = document_as_template.render(site=app.jinja_env.site, page=self, url=self.url)
+            return content
         return None
 
     @property
