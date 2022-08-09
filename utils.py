@@ -18,6 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import contextlib
 import importlib
 import hashlib
 import logging
@@ -268,3 +269,14 @@ def merge_dictionaries(a, b):
     for key, value in b.items():
         result[key] = value
     return result
+
+
+@contextlib.contextmanager
+def measure(name):
+    try:
+        logging.info("%s...", name)
+        start = time.time()
+        yield
+    finally:
+        duration = time.time() - start
+        logging.info("%s completed in %.02f seconds", name, duration)
