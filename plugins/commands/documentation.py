@@ -67,7 +67,8 @@ def command_documentation(incontext, options):
         files.remove("service/website.py")
 
         # Get the paths as Python module names.
-        # TODO: Restore the filter documentation generation after dropping Flask dependency
+        # TODO: Restore the filter documentation generation after dropping Flask dependency #188
+        #       https://github.com/inseven/incontext/issues/188
         modules = [os.path.splitext(f)[0] for f in files]
 
         # Generate the Python documentation.
