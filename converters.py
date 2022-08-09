@@ -75,15 +75,12 @@ def title_and_scale_from_path(path):
     dirname, basename = os.path.split(path)
     if is_index(path):
         basename = os.path.basename(dirname)
-
+    name, _ = os.path.splitext(basename)
     scale = None
-    match_scale = re.match(r"^(.+?)@(\d+)x$", basename)
+    match_scale = re.match(r"^(.+?)@(\d+)x$", name)
     if match_scale:
         scale = int(match_scale.group(2))
-        basename = match_scale.group(1)
-
-    name, ext = os.path.splitext(basename)
-
+        name = match_scale.group(1)
     return (titlecase.titlecase(name.replace("-", " ")), scale)
 
 
