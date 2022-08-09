@@ -525,8 +525,8 @@ def markdown(page):
         for image in document.xpath("//img"):
             src = image.get('src')
             if src is not None and src.startswith("+"):  # '+' denotes Markdown images
-                image_url = (os.path.splitext(src[1:])[0] + "/").lower()  # TODO: LOTS OF ASSUMPTIONS
-                image_document = app.jinja_env.site.post(image_url)
+                image_url = page.url_for_path(src[1:])
+                image_document = page.post(image_url)
                 if image_document is None:
                     logging.error("Failed to get document for image '%s'" % (image_url, ))
                     continue
