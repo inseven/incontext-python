@@ -145,8 +145,9 @@ def process_files(incontext, options, handlers):
     document_store = store.DocumentStore(incontext.configuration.site.destination.store_path)
     incontext.environment[DOCUMENT_STORE] = document_store
 
-    logging.info("Generating intermediates...")
-    phase1 = Phase(os.path.join(incontext.configuration.site.destination.root_directory, "phase-1-generate-intermediates.json"),
+    logging.info("Importing...")
+    phase1 = Phase("import",
+                   os.path.join(incontext.configuration.site.destination.root_directory, "phase-1-generate-intermediates.json"),
                    incontext.configuration.site.paths.content,
                    document_store)
     for task in handlers:
@@ -171,9 +172,9 @@ def process_files(incontext, options, handlers):
     template_mtimes = [os.path.getmtime(path) for path in templates]
     template_hash = utils.hash_items(template_mtimes)
 
-    logging.info("Render content cache...")
-    cache_path = os.path.join(incontext.configuration.site.destination.root_directory, "phase-6-render-content.json")
-    render_change_tracker = tracker.ChangeTracker(cache_path)
+    logging.info("Rendering...")
+    cache_path = os.path.join(incontext.configuration.site.destination.root_directory, "phase-2-render.json")
+    render_change_tracker = tracker.ChangeTracker("render", cache_path)
     website = Website(incontext=incontext)
     for document in website.documents():
         def render_outer(document):
@@ -313,12 +314,13 @@ def cleanup(root, document_store):
 
 class Phase(object):
 
-    def __init__(self, cache, root, document_store):
+    def __init__(self, name, cache, root, document_store):
+        self.name = name
         self.cache = cache
         self.root = root
         self.document_store = document_store
         self.tasks = []
-        self.tracker = tracker.ChangeTracker(self.cache)
+        self.tracker = tracker.ChangeTracker(name, self.cache)
 
     def add_task(self, matcher, task):
         self.tasks.append((matcher, task))
@@ -328,18 +330,19 @@ class Phase(object):
         return self.tracker.paths
 
     def process(self):
-        for root, dirname, basename in utils.find_files(self.root):
-            relpath = os.path.join(dirname, basename)
-            for matcher, task in self.tasks:
-                if matcher.matches(relpath):
-                    def debug_task(task, relpath):
-                        @functools.wraps(task)
-                        def inner(path):
-                            logging.info("[%s] %s" % (task.__name__, relpath))
-                            return task(path)
-                        return inner
-                    self.tracker.add(os.path.join(root, dirname, basename), debug_task(task, relpath))
-                    break
+        with utils.measure("[%s] Scanning files" % (self.name, )):
+            for root, dirname, basename in utils.find_files(self.root):
+                relpath = os.path.join(dirname, basename)
+                for matcher, task in self.tasks:
+                    if matcher.matches(relpath):
+                        def debug_task(task, relpath):
+                            @functools.wraps(task)
+                            def inner(path):
+                                logging.info("[%s] %s" % (task.__name__, relpath))
+                                return task(path)
+                            return inner
+                        self.tracker.add(os.path.join(root, dirname, basename), debug_task(task, relpath))
+                        break
         self.tracker.commit(cleanup(self.root, self.document_store))
 
 

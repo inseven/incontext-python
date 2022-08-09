@@ -20,13 +20,17 @@
 
 import copy
 import json
+import logging
 import os
 import os.path
+
+import utils
 
 
 class ChangeTracker(object):
 
-    def __init__(self, path):
+    def __init__(self, name, path):
+        self._name = name
         self._path = path
         self._cache = {}
         if os.path.exists(self._path):
@@ -61,9 +65,13 @@ class ChangeTracker(object):
         return self._cache.keys()
 
     def commit(self, cleanup):
-        for path in self._deletions.keys():
-            cleanup(self._cache[path]['info'])
-            del self._cache[path]
-        for action in self._actions:
-            action()
+        if self._deletions:
+            with utils.measure("[%s] Cleaning %d items" % (self._name, len(self._deletions))):
+                for path in self._deletions.keys():
+                    cleanup(self._cache[path]['info'])
+                    del self._cache[path]
+        if self._actions:
+            with utils.measure("[%s] Processing %d items" % (self._name, len(self._actions))):
+                for action in self._actions:
+                    action()
         self._save()
