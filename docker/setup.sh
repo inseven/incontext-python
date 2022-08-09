@@ -53,9 +53,8 @@ make -j8 install
 # Install the Python dependencies.
 
 cd $INCONTEXT_DIR
-python3 -m pip install pipenv
 pip3 install git+https://github.com/david-poirier-csn/pyheif.git
-pipenv install --verbose --system --skip-lock
+pip3 install -r python-requirements.txt
 
 # Install the Ruby dependencies.
 
