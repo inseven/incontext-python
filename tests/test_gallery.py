@@ -412,9 +412,6 @@ class GalleryTestCase(unittest.TestCase):
             site.assertMIMEType("build/files/image/thumbnail.jpeg", "image/jpeg")
             site.assertImageSize("build/files/image/thumbnail.jpeg", (480, 360))
 
-    # TODO: ImageMagick crashes during TIFF conversion in the new Alpine-based Docker container #144
-    #       https://github.com/inseven/incontext/issues/144
-    @unittest.expectedFailure
     def test_transform_image_tiff_default_configuration(self):
         with common.TemporarySite(self) as site:
             site.add("templates/photo.html", "{{ page.title }}\n")
