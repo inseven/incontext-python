@@ -159,6 +159,7 @@ class Site(object):
         try:
             return self._cache[url]
         except KeyError:
+            logging.debug("No document for URL '%s'", url)
             return None
 
     # TODO: Dependencies are not tracked for included image files.
