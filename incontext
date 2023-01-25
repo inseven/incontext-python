@@ -23,6 +23,7 @@
 import argparse
 import functools
 import hashlib
+import json
 import logging
 import operator
 import os
@@ -160,20 +161,32 @@ def main():
         options.append("--tty")
         options.append("--interactive")
 
+    # Check whether Docker is running rootless or not.
+    info = json.loads(subprocess.check_output(["docker", "info", "--format", "{{json . }}"]).decode("utf-8"))
+
+    is_rootless = False
+    try:
+        is_rootless = (info["ClientInfo"]["Context"] == "rootless")
+    except KeyError:
+        pass
+
+    user = [] if is_rootless else ["--user", f"{os.getuid()}:{os.getgid()}"]
+
     # Construct the command.
     if docker.shell:
-        command = (["docker", "run",
-                    "--workdir", site] +
-                    options +
-                    volumes +
-                    [image_tag, "bash"])
+        command = (["docker", "run"] +
+                   user +
+                   ["--workdir", site] +
+                   options +
+                   volumes +
+                   [image_tag, "bash"])
     else:
-        command = (["docker", "run",
-                    "--user", f"{os.getuid()}:{os.getgid()}",
-                    "--workdir", site] +
-                    options +
-                    volumes +
-                    docker.arguments +
+        command = (["docker", "run"] +
+                   user +
+                   ["--workdir", site] +
+                   options +
+                   volumes +
+                   docker.arguments +
                    [image_tag, "python3", "-u", os.path.join(ROOT, "incontext.py")] +
                    args)
 
