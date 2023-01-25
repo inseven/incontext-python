@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2022 InSeven Limited
+# Copyright (c) 2016-2023 InSeven Limited
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -159,6 +159,7 @@ class Site(object):
         try:
             return self._cache[url]
         except KeyError:
+            logging.debug("No document for URL '%s'", url)
             return None
 
     # TODO: Dependencies are not tracked for included image files.

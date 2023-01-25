@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (c) 2016-2022 InSeven Limited
+# Copyright (c) 2016-2023 InSeven Limited
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -161,9 +161,6 @@ class GalleryTestCase(unittest.TestCase):
         output_size = gallery.get_size(expected_basename, 1)
         self.assertEqual(output_size["width"], size[0])
 
-    # TODO: ImageMagick crashes during TIFF conversion in the new Alpine-based Docker container #144
-    #       https://github.com/inseven/incontext/issues/144
-    @unittest.expectedFailure
     @common.with_temporary_directory
     def test_resize_tiff(self):
 
@@ -412,9 +409,6 @@ class GalleryTestCase(unittest.TestCase):
             site.assertMIMEType("build/files/image/thumbnail.jpeg", "image/jpeg")
             site.assertImageSize("build/files/image/thumbnail.jpeg", (480, 360))
 
-    # TODO: ImageMagick crashes during TIFF conversion in the new Alpine-based Docker container #144
-    #       https://github.com/inseven/incontext/issues/144
-    @unittest.expectedFailure
     def test_transform_image_tiff_default_configuration(self):
         with common.TemporarySite(self) as site:
             site.add("templates/photo.html", "{{ page.title }}\n")
@@ -541,9 +535,6 @@ class GalleryTestCase(unittest.TestCase):
             with self.assertRaises(KeyError):
                 site.build()
 
-    # TODO: ImageMagick crashes during TIFF conversion in the new Alpine-based Docker container #144
-    #       https://github.com/inseven/incontext/issues/144
-    @unittest.expectedFailure
     def test_image_title_from_exif(self):
         with common.TemporarySite(self) as site:
             site.add("templates/photo.html", "{{ page.title }}")
