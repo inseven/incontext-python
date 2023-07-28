@@ -259,7 +259,7 @@ def command_clean(incontext, options):
     shutil.rmtree(build_dir)
 
 
-def import_markdown(incontext, from_directory, to_directory, default_category='general'):
+def import_markdown(incontext, from_directory, to_directory, default_category='general', default_template='post.html'):
 
     @functools.wraps(import_markdown)
     def inner(path):
@@ -269,6 +269,9 @@ def import_markdown(incontext, from_directory, to_directory, default_category='g
                                                    default_category=default_category)
 
         files = []
+
+        if "template" not in document.metadata:
+            document.metadata["template"] = default_template
 
         # Thumbnail.
         try:
