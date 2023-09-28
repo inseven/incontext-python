@@ -2,7 +2,7 @@
 
 Extensible static site generator
 
-**N.B. This Python version of InContext has now been replaced with a newer [Swift implementation](https://inseven.app) and is no longer being maintained.**
+**This Python version of InContext has now been replaced with a newer [Swift implementation](https://inseven.app) and is no longer being maintained.**
 
 ## Background
 
